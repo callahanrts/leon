@@ -1,0 +1,9 @@
+[package]
+name = "browser"
+version = "0.1.0"
+authors = ["Cody <callahanrts@gmail.com>"]
+
+[dependencies]
+piston_window = "0.64.0"
+conrod = {version="0.51.1",features=["piston","piston2d-graphics", "glium"]}
+find_folder = "0.3.0"
