@@ -1,45 +1,50 @@
 // UI Backend.
 // The Paint module is responsible for painting pixels on the screen.
+use glium;
 
-use conrod;
+use glium::{DisplayBuild, Surface};
+use glium::backend::glutin_backend::{GlutinFacade};
 
-use render::css::{Color};
-use render::layout::{Rect};
-use conrod::widget::{Button, Canvas, Circle, Line, Oval, PointPath, Polygon, Rectangle};
+#[derive(Copy, Clone)]
+struct Vertex {
+    position: [f32; 2],
+}
 
-pub fn draw_rect(ui: &mut conrod::UiCell, bounds: Rect, color: Color) {
-    use conrod;
-    use conrod::backend::glium::glium;
-    use conrod::backend::glium::glium::{DisplayBuild, Surface};
-    use conrod::{color, widget, Colorable, Positionable, Scalar, Sizeable, Widget};
-    // Generate a unique const `WidgetId` for each widget.
-    widget_ids!{
-        struct Ids {
-            master,
-            left_col,
-            middle_col,
-            right_col,
-            left_text,
-            middle_text,
-            right_text,
+implement_vertex!(Vertex, position);
+
+pub fn init() {
+}
+
+pub fn draw(display: &GlutinFacade) {
+    let vertex1 = Vertex { position: [-0.5, -0.5] };
+    let vertex2 = Vertex { position: [ 0.0,  0.5] };
+    let vertex3 = Vertex { position: [ 0.5, -0.25] };
+    let shape = vec![vertex1, vertex2, vertex3];
+
+    let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+    let vertex_shader_src = r#"
+        #version 140
+        in vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
         }
-    }
+    "#;
 
-    // A unique identifier for each widget.
-    let ids = Ids::new(ui.widget_id_generator());
+    let fragment_shader_src = r#"
+        #version 140
+        out vec4 color;
+        void main() {
+            color = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    "#;
 
-    const DEMO_TEXT: &'static str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
-        Mauris aliquet porttitor tellus vel euismod. Integer lobortis volutpat bibendum. Nulla \
-        finibus odio nec elit condimentum, rhoncus fermentum purus lacinia. Interdum et malesuada \
-        fames ac ante ipsum primis in faucibus. Cras rhoncus nisi nec dolor bibendum pellentesque. \
-        Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. \
-        Quisque commodo nibh hendrerit nunc sollicitudin sodales. Cras vitae tempus ipsum. Nam \
-        magna est, efficitur suscipit dolor eu, consectetur consectetur urna.";
+    let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
-    // A unique identifier for each widget.
-    conrod::widget::Text::new(DEMO_TEXT)
-        .color(color::LIGHT_RED)
-        .left_justify()
-        .line_spacing(10.0)
-        .set(ids.left_text, ui);
+    let mut target = display.draw();
+    target.clear_color(0.0, 0.0, 1.0, 1.0);
+    target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
+                &Default::default()).unwrap();
+    target.finish().unwrap();
 }

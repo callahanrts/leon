@@ -1,28 +1,21 @@
-// piston
 #[macro_use]
-extern crate conrod;
-extern crate piston_window;
-extern crate find_folder;
+extern crate glium;
 
 pub mod render;
 pub mod paint;
 
 use std::fs::File;
 use std::io::Read;
+use std::time::Duration;
+use std::thread;
 
 use render::{parser, style, css};
-use piston_window::*;
 
 fn main() {
     start_window();
 }
 
 fn start_window() {
-    let mut window: PistonWindow = WindowSettings::new("TEST", (640, 480))
-          .exit_on_esc(true)
-          .build()
-          .unwrap_or_else(|e| { panic!("Failed to build PistonWindow: {}", e) });
-
     let html = read_file("html/basic.html".to_string());
     let css = read_file("html/basic.css".to_string());
     let stylesheet = css::parse(css);
@@ -30,13 +23,23 @@ fn start_window() {
     let style_root = render::style::style_tree(&root_node, &stylesheet);
     let layout_root = render::layout::build_layout_tree(&style_root);
 
-    while let Some(event) = window.next() {
-        window.draw_2d(&event, |_c, g| {
-            clear([1.0, 1.0, 1.0, 1.0], g);
-            render::display::paint(&layout_root);
-        });
-    }
+    use glium::{DisplayBuild,Surface};
+    let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
+    loop {
+        paint::draw(&display);
+
+        for ev in display.poll_events() {
+            match ev {
+                glium::glutin::Event::Closed => return, // Window has been closed by the user
+                _ => ()
+            }
+        }
+
+        // Sleep for a few ms to save cpu. In the future, maybe we can pause this thread for
+        // inactive windows/tabs
+        thread::sleep(Duration::from_millis(20))
+    }
 }
 
 fn read_file(filename: String) -> String {
