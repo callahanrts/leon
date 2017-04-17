@@ -12,39 +12,61 @@ struct Vertex {
 
 implement_vertex!(Vertex, position);
 
-pub fn init() {
+pub struct Painter {
+    display: GlutinFacade,
+    frame: glium::Frame,
 }
 
-pub fn draw(display: &GlutinFacade) {
-    let vertex1 = Vertex { position: [-0.5, -0.5] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25] };
-    let shape = vec![vertex1, vertex2, vertex3];
+impl Painter {
+    fn new() -> Painter {
+        let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
+        let frame = display.draw();
+        Painter {
+            display: display,
+            frame: frame,
+        }
+    }
 
-    let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    // pub fn done(&mut self) {
+    //     self.frame.finish().unwrap();
+    // }
 
-    let vertex_shader_src = r#"
+    pub fn draw(&self, target: &glium::Frame, display: &mut GlutinFacade) {
+        let vertex1 = Vertex { position: [-0.5, -0.5] };
+        let vertex2 = Vertex { position: [ 0.0,  0.5] };
+        let vertex3 = Vertex { position: [ 0.5, -0.25] };
+        let shape = vec![vertex1, vertex2, vertex3];
+
+        let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
+        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+
+        // self.frame.clear_color(0.0, 0.0, 1.0, 1.0);
+        // target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
+        //             &Default::default()).unwrap();
+        // target.finish().unwrap();
+    }
+
+}
+
+fn vertex_shader_src<'a>() -> &'a str {
+    let src = r#"
         #version 140
         in vec2 position;
         void main() {
             gl_Position = vec4(position, 0.0, 1.0);
         }
     "#;
+    return src;
+}
 
-    let fragment_shader_src = r#"
+fn fragment_shader_src<'a>() -> &'a str {
+    let src = r#"
         #version 140
         out vec4 color;
         void main() {
             color = vec4(1.0, 0.0, 0.0, 1.0);
         }
     "#;
-
-    let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None).unwrap();
-
-    let mut target = display.draw();
-    target.clear_color(0.0, 0.0, 1.0, 1.0);
-    target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
-                &Default::default()).unwrap();
-    target.finish().unwrap();
+    return src;
 }

@@ -9,7 +9,7 @@ use std::io::Read;
 use std::time::Duration;
 use std::thread;
 
-use render::{parser, style, css};
+use render::{parser, style, css, display};
 
 fn main() {
     start_window();
@@ -24,12 +24,11 @@ fn start_window() {
     let layout_root = render::layout::build_layout_tree(&style_root);
 
     use glium::{DisplayBuild,Surface};
-    let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
+    let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
     loop {
-        paint::draw(&display);
 
-        for ev in display.poll_events() {
+        for ev in gdisplay.poll_events() {
             match ev {
                 glium::glutin::Event::Closed => return, // Window has been closed by the user
                 _ => ()
