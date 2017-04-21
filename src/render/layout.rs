@@ -62,6 +62,7 @@ pub struct EdgeSizes {
     pub bottom: f32,
 }
 
+#[derive(Debug)]
 pub struct LayoutBox<'a> {
     pub dimensions: Dimensions,
     pub box_type: BoxType<'a>,
@@ -73,8 +74,8 @@ impl<'a> LayoutBox<'a> {
     fn layout(&mut self, containing_block: Dimensions) {
         match self.box_type {
             BoxType::BlockNode(_) => self.layout_block(containing_block),
-            BoxType::InlineNode(_) => {} // TODO
-            BoxType::AnonymousBlock => {} // TODO
+            BoxType::InlineNode(_) => {}, // TODO
+            BoxType::AnonymousBlock => {}, // TODO
         }
     }
 
@@ -214,10 +215,22 @@ impl<'a> LayoutBox<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum BoxType<'a> {
     BlockNode(&'a StyleNode<'a>),
     InlineNode(&'a StyleNode<'a>),
     AnonymousBlock,
+}
+
+// Transform a style tree into a layout tree.
+pub fn layout_tree<'a>(node: &'a StyleNode<'a>, mut containing_block: Dimensions) -> LayoutBox<'a> {
+    // The layout algorithm expects the container height to start at 0.
+    // TODO: Save the initial containing block height, for calculating percent heights.
+    containing_block.content.height = 0.0;
+
+    let mut root_box = build_layout_tree(node);
+    root_box.layout(containing_block);
+    root_box
 }
 
 // Build the tree of LayoutBoxes, but don't perform any layout calculations yet

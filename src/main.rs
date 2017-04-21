@@ -21,12 +21,26 @@ fn start_window() {
     let stylesheet = css::parse(css);
     let root_node = parser::parse(html);
     let style_root = render::style::style_tree(&root_node, &stylesheet);
-    let layout_root = render::layout::build_layout_tree(&style_root);
 
     use glium::{DisplayBuild,Surface};
     let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
     loop {
+
+        let win = gdisplay.get_window().unwrap();
+        let (width, height) = win.get_inner_size_pixels().unwrap();
+        let dim = render::layout::Dimensions{
+            content: render::layout::Rect{
+                width: width as f32,
+                height: height as f32,
+                x: 0.0,
+                y: 0.0,
+            },
+            .. Default::default()
+        };
+
+        let layout_root = render::layout::layout_tree(&style_root, dim);
+        render::display::paint(&gdisplay, &layout_root);
 
         for ev in gdisplay.poll_events() {
             match ev {

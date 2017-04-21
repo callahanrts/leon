@@ -8,12 +8,14 @@ use render::dom;
 
 pub type PropertyMap = HashMap<String, css::Value>;
 
+#[derive(Debug)]
 pub enum Display {
     Inline,
     Block,
     None,
 }
 
+#[derive(Debug)]
 pub struct StyleNode<'a> {
     pub node: &'a dom::Node,
     pub specified_values: PropertyMap,

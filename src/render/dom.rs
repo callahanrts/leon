@@ -3,6 +3,7 @@
 use std::collections::{HashMap,HashSet};
 
 // Struct representing a DOM node
+#[derive(Debug)]
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: NodeType,
