@@ -66,7 +66,6 @@ fn matches_simple_selector(elem: &dom::ElementData, selector: &css::SimpleSelect
     }
 
     // Check Class Selectors
-    let elem_classes = elem.classes();
     if selector.class.iter().any(|class| !elem.classes().contains(&**class)) {
         return false;
     }

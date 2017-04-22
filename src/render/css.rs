@@ -85,11 +85,6 @@ impl Parser {
         return self.input[self.pos..].chars().next().unwrap();
     }
 
-    // Do the next characters start with the given string?
-    fn starts_with(&self, s: &str) -> bool {
-        return self.input[self.pos..].starts_with(s);
-    }
-
     // Return true if all input is consumed
     fn eof(&self) -> bool {
         return self.pos >= self.input.len();

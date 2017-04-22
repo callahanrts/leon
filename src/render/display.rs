@@ -1,9 +1,8 @@
 use render::layout::{LayoutBox,Rect,BoxType};
 use render::css::{Color,Value};
-use paint;
 
 use glium;
-use glium::{DisplayBuild, Surface};
+use glium::{Surface};
 use glium::backend::glutin_backend::{GlutinFacade};
 
 type DisplayList = Vec<DisplayCommand>;
@@ -98,10 +97,10 @@ fn render_borders(list: &mut DisplayList, layout_box: &LayoutBox) {
 
 }
 
-fn paint_item(item: &DisplayCommand, display: &GlutinFacade, frame: &mut glium::Frame, display_list: &DisplayList) {
+fn paint_item(item: &DisplayCommand, display: &GlutinFacade, frame: &mut glium::Frame) {
     match item {
         &DisplayCommand::SolidColor(color, rect) => {
-            let mut program = glium::Program::from_source(display, vertex_shader_src(), &*fragment_shader_src(color), None).unwrap();
+            let program = glium::Program::from_source(display, vertex_shader_src(), &*fragment_shader_src(color), None).unwrap();
             draw_rect(display, frame, &program, rect);
         }
     }
@@ -114,7 +113,7 @@ pub fn paint(display: &glium::backend::glutin_backend::GlutinFacade, layout_root
 
     let display_list = build_display_list(layout_root);
     for item in &display_list {
-        paint_item(&item, display, &mut frame, &display_list);
+        paint_item(&item, display, &mut frame);
     }
     frame.finish().unwrap();
 }

@@ -9,7 +9,7 @@ use std::io::Read;
 use std::time::Duration;
 use std::thread;
 
-use render::{parser, style, css, display};
+use render::{parser, css};
 
 fn main() {
     start_window();
@@ -22,7 +22,7 @@ fn start_window() {
     let root_node = parser::parse(html);
     let style_root = render::style::style_tree(&root_node, &stylesheet);
 
-    use glium::{DisplayBuild,Surface};
+    use glium::{DisplayBuild};
     let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
     loop {
