@@ -2,7 +2,6 @@
 extern crate glium;
 
 pub mod render;
-pub mod paint;
 
 use std::fs::File;
 use std::io::Read;
