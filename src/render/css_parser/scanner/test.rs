@@ -3,13 +3,15 @@
 use super::*;
 
 #[test]
-// Look ahead to the next character
+// Look ahead to the next character without consuming it
 fn test_next_char() {
     let mut s = scanner("Hello".to_owned());
+    assert_eq!(s.next_char(), 'H');
     assert_eq!(s.next_char(), 'H');
 }
 
 #[test]
+// Look ahead to the nth character
 fn test_nth_char() {
     let mut s = scanner("Hello".to_owned());
     s.consume_char();
@@ -31,6 +33,10 @@ fn test_eof() {
     assert_eq!(s.eof(), true);
 }
 
+//
+// Consumption
+//
+
 #[test]
 fn test_consume_char() {
     let mut s = scanner("Hello".to_owned());
@@ -50,10 +56,6 @@ fn test_consume_while() {
     });
     s.consume_whitespace();
     assert_eq!(s.next_char(), 'W');
-}
-
-#[test]
-fn test_consume_token() {
 }
 
 #[test]
@@ -138,8 +140,8 @@ fn test_unmatched_string() {
 //     };
 // }
 
-fn text_consume_string() {
-}
+// Tested through consume_string_token
+// fn test_consume_string(){}
 
 #[test]
 fn test_consume_hash_token() {
@@ -154,37 +156,164 @@ fn test_consume_hash_token() {
     }
 }
 
-fn test_consume_plus() {
-}
-
-fn test_consume_minus() {
-}
-
-fn test_consume_number_token() {
-}
-
+#[test]
 fn test_consume_number() {
+    assert_consume_number("23 ", 23.0, "integer");
+    assert_consume_number("-23 ", -23.0, "integer");
+    assert_consume_number("23.5 ", 23.5, "number");
+    assert_consume_number("+23.5 ", 23.5, "number");
+    // Not sure if this is even supported?
+    //assert_consume_number(".023.5e+3 ", 23.5, "number");
 }
 
-fn test_consume_cdc() {
+fn assert_consume_number(input: &str, val: f32, tpe: &str) {
+    let mut s = scanner(String::from(input));
+    let (v, t) = s.consume_number();
+    assert_eq!(val, v);
+    assert_eq!(t, String::from(tpe));
+}
+
+#[test]
+fn test_consume_number_token() {
+    let input = String::from("+123;");
+    let mut s = scanner(input);
+    match s.consume_number_token() {
+        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, 123.0),
+        _ => assert!(false),
+    }
+
+    let input = String::from("23%");
+    let mut s = scanner(input);
+    match s.consume_number_token() {
+        Token::PercentageToken(v) => assert_eq!(v, 23.0),
+        _ => assert!(false),
+    }
+
+    let input = String::from("23px");
+    let mut s = scanner(input);
+    match s.consume_number_token() {
+        Token::DimensionToken{value: v, num_type: n, unit: u} => {
+            assert_eq!(v, 23.0);
+            assert_eq!(u, "px");
+        }
+        _ => assert!(false),
+    }
+}
+
+#[test]
+fn test_consume_plus() {
+    let input = String::from("+123;");
+    let mut s = scanner(input);
+    match s.consume_plus() {
+        Token::NumberToken{value: v, num_type: n} => {
+            assert_eq!(v, 123.0);
+            assert_eq!(n, "integer");
+        },
+        _ => assert!(false),
+    }
+    assert_eq!(s.next_char(), ';');
+}
+
+#[test]
+fn test_consume_minus() {
+    // CDC Token
+    let input = String::from("--> ");
+    let mut s = scanner(input);
+    match s.consume_minus() {
+        Token::CDCToken => assert!(true),
+        _ => assert!(false),
+    }
+
+    let input = String::from("-23 ");
+    let mut s = scanner(input);
+    match s.consume_minus() {
+        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, -23.0),
+        _ => assert!(false),
+    }
+
+    let input = String::from("-- ");
+    let mut s = scanner(input);
+    match s.consume_minus() {
+        Token::DelimToken(v) => assert_eq!(v, '-'),
+        _ => assert!(false),
+    }
+
+    let input = String::from("-test ");
+    let mut s = scanner(input);
+    match s.consume_minus() {
+        Token::IdentToken(v) => assert_eq!(v, "test"),
+        _ => assert!(false),
+    }
 }
 
 fn test_consume_ident() {
 }
 
+#[test]
 fn test_consume_url_token() {
+    let input = String::from("  http://www.url.com/);");
+    let mut s = scanner(input);
+    match s.consume_url_token() {
+        Token::UrlToken(u) => assert!(true),
+        _ => assert!(false),
+    }
+    assert_eq!(s.next_char(), ';');
+
+    let input = String::from("  http://www.url.(com/  ;");
+    let mut s = scanner(input);
+    match s.consume_url_token() {
+        Token::BadUrlToken => assert!(true),
+        _ => assert!(false),
+    }
+
+    let input = String::from("  http://www.url.com/'  ;");
+    let mut s = scanner(input);
+    match s.consume_url_token() {
+        Token::BadUrlToken => assert!(true),
+        _ => assert!(false),
+    }
 }
 
+#[test]
 fn test_consume_bad_url_remnants() {
+    let input = String::from("  bad(url**\\''://\"ww.url.com/');");
+    let mut s = scanner(input);
+    s.consume_bad_url_remnants();
+    assert_eq!(s.next_char(), ';');
 }
 
+#[test]
 fn test_consume_full_stop() {
+    let input = String::from(".23;");
+    let mut s = scanner(input);
+    match s.consume_full_stop()  {
+        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, 0.23),
+        _ => assert!(false),
+    }
+
+    let input = String::from(".d");
+    let mut s = scanner(input);
+    match s.consume_full_stop() {
+        Token::DelimToken(c) => assert_eq!(c, '.'),
+        _ => assert!(false),
+    }
 }
 
+#[test]
 fn test_consume_less_than() {
-}
+    let input = String::from("<!--  ;");
+    let mut s = scanner(input);
+    match s.consume_less_than()  {
+        Token::CDOToken => assert!(true),
+        _ => assert!(false),
+    }
 
-fn test_consume_cdo_token() {
+    let input = String::from("<fdsa");
+    let mut s = scanner(input);
+    match s.consume_less_than() {
+        Token::DelimToken(c) => assert_eq!(c, '<'),
+        _ => assert!(false),
+    }
 }
 
 fn test_consume_token() {
@@ -193,7 +322,11 @@ fn test_consume_token() {
 //
 // Helpers
 //
+
 #[test]
+// name-start code point:
+//     A letter, a non-ASCII code point, or U+005F LOW LINE (_).
+//     Digits are thrown in here because that has become an accepted char by modern browsers
 fn test_name_start_code_point() {
     assert!(name_start_code_point('b'));
     assert!(name_start_code_point('B'));
@@ -204,6 +337,8 @@ fn test_name_start_code_point() {
 }
 
 #[test]
+// name code point
+//     A name-start code point, a digit, or U+002D HYPHEN-MINUS (-).
 fn test_name_code_point() {
     assert!(name_code_point('b'));
     assert!(name_code_point('B'));
@@ -214,23 +349,20 @@ fn test_name_code_point() {
 }
 
 #[test]
+// https://drafts.csswg.org/css-syntax/#check-if-three-code-points-would-start-an-identifier
 fn test_would_be_identifier() {
-    let input = String::from("#abc-de_fg23 div");
-    let mut s = scanner(input);
+    let mut s = scanner(String::from("#abc-de_fg23 div"));
     s.consume_char(); // Consume #
     assert!(would_be_identifier(&s));
 
-    let input = String::from("#2abc");
-    let mut s = scanner(input);
+    let mut s = scanner(String::from("#2abc"));
     s.consume_char(); // Consume #
     assert!(!would_be_identifier(&s));
 
-    let input = String::from("#_abc");
-    let mut s = scanner(input);
+    let mut s = scanner(String::from("#_abc"));
     assert!(!would_be_identifier(&s));
 
-    let input = String::from("#-abc");
-    let mut s = scanner(input);
+    let mut s = scanner(String::from("#-abc"));
     assert!(!would_be_identifier(&s));
 }
 
@@ -241,7 +373,33 @@ fn test_is_number(){
     assert!(!is_number('a'));
 }
 
-fn test_would_be_identifier() {
+#[test]
+// https://drafts.csswg.org/css-syntax/#starts-with-a-number
+fn test_start_of_number() {
+    let mut s = scanner(String::from("0"));
+    assert!(start_of_number(&s));
+
+    let mut s = scanner(String::from(".01"));
+    assert!(start_of_number(&s));
+
+    let mut s = scanner(String::from("+1"));
+    assert!(start_of_number(&s));
+
+    let mut s = scanner(String::from("-1"));
+    assert!(start_of_number(&s));
+
+    let mut s = scanner(String::from("-1e+3"));
+    assert!(start_of_number(&s));
+
+    let mut s = scanner(String::from("1e-3"));
+    assert!(start_of_number(&s));
+}
+
+#[test]
+fn test_newline() {
+    assert!(newline('\n'));
+    assert!(newline('\r'));
+    assert!(!newline(' '));
 }
 
 fn scanner(input: String) -> Scanner {

@@ -11,19 +11,19 @@ struct Scanner {
 
 enum Token {
     // General Tokens
-    Whitespace,
+    WhitespaceToken,
     EOFToken,    // End of file
-    Delim(char), // Anything else
+    DelimToken(char), // Anything else
 
     // Char Tokens
-    LeftParen,
-    RightParen,
-    Comma,
-    Colon,
-    SemiColon,
-    LeftSquareBracket,
-    LeftCurlyBracket,
-    RightCurlyBracket,
+    LeftParenToken,
+    RightParenToken,
+    CommaToken,
+    ColonToken,
+    SemiColonToken,
+    LeftSquareBracketToken,
+    LeftCurlyBracketToken,
+    RightCurlyBracketToken,
 
     // String Tokens
     StringToken(String),
@@ -121,31 +121,31 @@ impl Scanner {
             // apostrophe '
             '\'' => self.consume_string_token(),
             // Left paren (
-            '(' => self.consume_then_token(Token::LeftParen),
+            '(' => self.consume_then_token(Token::LeftParenToken),
             // Right paren )
-            ')' => self.consume_then_token(Token::RightParen),
+            ')' => self.consume_then_token(Token::RightParenToken),
             // Plus Sign +
             '+' => self.consume_plus(),
             // Comma ,
-            ',' => self.consume_then_token(Token::Comma),
+            ',' => self.consume_then_token(Token::CommaToken),
             // Hyphen-minus -
             '-' => self.consume_minus(),
             // Full Stop .
             '.' => self.consume_full_stop(),
             // Colon :
-            ':' => self.consume_then_token(Token::Colon),
+            ':' => self.consume_then_token(Token::ColonToken),
             // Semi-colon ;
-            ';' => self.consume_then_token(Token::SemiColon),
+            ';' => self.consume_then_token(Token::SemiColonToken),
             // Less than Sign <
             '<' => self.consume_less_than(),
             // Commercial at @
             '@' => self.consume_at_keyword_token(),
             // Left square bracket [
-            '[' => self.consume_then_token(Token::LeftSquareBracket),
+            '[' => self.consume_then_token(Token::LeftSquareBracketToken),
             // Left curly bracket {
-            '{' => self.consume_then_token(Token::LeftCurlyBracket),
+            '{' => self.consume_then_token(Token::LeftCurlyBracketToken),
             // Right curly bracket }
-            '}' => self.consume_then_token(Token::RightCurlyBracket),
+            '}' => self.consume_then_token(Token::RightCurlyBracketToken),
             // digit
             '0' ... '9' => self.consume_number_token(),
             // Anything else
@@ -155,7 +155,7 @@ impl Scanner {
                 } else if name_start_code_point(code_point) {
                     return self.consume_ident_token();
                 }
-                return self.consume_then_token(Token::Delim(code_point));
+                return self.consume_then_token(Token::DelimToken(code_point));
             }
         }
     }
@@ -194,7 +194,7 @@ impl Scanner {
     // Consume and discard 0 or more whitespace characters and return a whitespace token
     fn consume_whitespace(&mut self) -> Token {
         self.consume_while(char::is_whitespace);
-        return Token::Whitespace;
+        return Token::WhitespaceToken;
     }
 
     // <hash-token>
@@ -216,7 +216,7 @@ impl Scanner {
             Token::HashToken{hash_type: hash_type, name: name}
         } else {
             // Otherwise, return a <delim-token> with its value set to the current input code point.
-            Token::Delim(self.consume_char())
+            Token::DelimToken(self.consume_char())
         }
     }
 
@@ -329,31 +329,35 @@ impl Scanner {
         if is_number(self.next_char()) {
             self.consume_number_token()
         } else {
-            Token::Delim(code_point)
+            Token::DelimToken(code_point)
         }
     }
 
     fn consume_minus(&mut self) -> Token {
         // If the second character is a number (eg. -2)
         if is_number(self.nth_char(2)) {
-            self.consume_number_token()
+            return self.consume_number_token();
         } else {
+            self.consume_char();
             if self.nth_char(2) == '>' {
                 // Consume both tokens and return <CDC-token>
-                self.consume_cdc();
+                return self.consume_cdc();
             } else if would_be_identifier(self) {
                 // Consume and return ident token
-                self.consume_ident_token();
+                return self.consume_ident_token();
             }
 
             // Return delim token with '-'
-            Token::Delim(self.consume_char())
+            return Token::DelimToken(self.consume_char());
         }
     }
 
     // <CDC-token>
     fn consume_cdc(&mut self) -> Token {
-        Token::Delim('a')
+        self.consume_char(); // -
+        self.consume_char(); // -
+        self.consume_char(); // >
+        Token::CDCToken
     }
 
     // <ident-token>
@@ -401,12 +405,6 @@ impl Scanner {
                     break;
                 }
 
-                if self.next_char() == ')' {
-                    self.consume_char();
-                    self.consume_bad_url_remnants();
-                    return Token::BadUrlToken;
-                }
-
                 match next_char {
                     '"' | '\'' | '(' => {
                         self.consume_bad_url_remnants();
@@ -421,13 +419,16 @@ impl Scanner {
 
     fn consume_bad_url_remnants(&mut self) {
         self.consume_while(|c| c != ')');
+        if !self.eof() && self.next_char() == ')' {
+            self.consume_char();
+        }
     }
 
     fn consume_full_stop(&mut self) -> Token {
         if is_number(self.nth_char(2)) {
             self.consume_number_token()
         } else {
-            Token::Delim(self.consume_char())
+            Token::DelimToken(self.consume_char())
         }
     }
 
@@ -440,7 +441,7 @@ impl Scanner {
             self.consume_char();
             Token::CDOToken
         } else {
-            Token::Delim(lt)
+            Token::DelimToken(lt)
         }
     }
 
@@ -449,7 +450,7 @@ impl Scanner {
         if would_be_identifier(self) {
             Token::AtKeywordToken(self.consume_name())
         } else {
-            Token::Delim(at)
+            Token::DelimToken(at)
         }
     }
 
@@ -470,6 +471,7 @@ fn is_number(c: char) -> bool {
 fn start_of_number(s: &Scanner) -> bool {
     match s.next_char() {
         '+' | '-' => is_number(s.nth_char(2)) || (s.nth_char(2) == '.' && is_number(s.nth_char(3))),
+        '.' => is_number(s.nth_char(2)),
         _ => is_number(s.next_char()),
     }
 }
