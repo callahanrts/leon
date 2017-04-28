@@ -2,9 +2,9 @@
 mod test;
 use std::ascii::AsciiExt;
 
-// # Scanner
+// # Tokenizer
 // A struct to store an input string and the position while parsing
-struct Scanner {
+struct Tokenizer {
     pos: usize,
     input: String,
 }
@@ -48,9 +48,9 @@ enum Token {
     AtKeywordToken(String),
 }
 
-// # Scanner
+// # Tokenizer
 // Implementation of a scanner. Consume characters and return tokens
-impl Scanner {
+impl Tokenizer {
     //
     // Basic String scanning methods
     //
@@ -468,7 +468,7 @@ fn is_number(c: char) -> bool {
 }
 
 // Do the next 3 characters start a number
-fn start_of_number(s: &Scanner) -> bool {
+fn start_of_number(s: &Tokenizer) -> bool {
     match s.next_char() {
         '+' | '-' => is_number(s.nth_char(2)) || (s.nth_char(2) == '.' && is_number(s.nth_char(3))),
         '.' => is_number(s.nth_char(2)),
@@ -495,7 +495,7 @@ fn name_code_point(c: char) -> bool {
     }
 }
 
-fn would_be_identifier(s: &Scanner) -> bool {
+fn would_be_identifier(s: &Tokenizer) -> bool {
     name_start_code_point(s.next_char()) && name_code_point(s.nth_char(2))
 }
 
