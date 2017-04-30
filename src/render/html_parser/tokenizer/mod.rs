@@ -57,7 +57,10 @@ enum State {
 
     // RC States
     RCDataState,
-    RCDataLessThanSignState
+    RCDataLessThanSignState,
+
+    RawtextState,
+    RawtextLessThanSignState,
 }
 
 struct Tokenizer<'a> {
@@ -132,6 +135,12 @@ impl<'a> Tokenizer<'a> {
             },
             State::RCDataState => {
                 match self.consume_rcdata_state() {
+                    Some(token) => tokens.push(token),
+                    None => {},
+                }
+            },
+            State::RawtextState => {
+                match self.consume_rawtext_state() {
                     Some(token) => tokens.push(token),
                     None => {},
                 }
@@ -214,6 +223,34 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
+        return None;
+    }
+
+    fn consume_rawtext_state(&mut self) -> Option<Token<'a>> {
+        // Return an EOF token if there are no more characters. Do this before we try to
+        // consume another character.
+        if self.eof() {
+            return Some(Token::EOFToken);
+        }
+
+        // Consume the next input Char
+        let cur = self.consume_char();
+        match cur {
+            '<' | '\u{003C}' => {
+                // Switch to RawtextLessThanSignState
+                self.state = State::RawtextLessThanSignState;
+            }
+            // Null character
+            '\u{0000}' => {
+                // TODO: Parse error
+                // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                return Some(Token::CharToken('\u{FFFD}'));
+            }
+            _ => {
+                // For everything else, return the character in a CharToken
+                return Some(Token::CharToken(cur));
+            }
+        }
         return None;
     }
 
