@@ -1,16 +1,17 @@
 #[cfg(test)]
 mod test;
-use std::ascii::AsciiExt;
 
 // # Tokenizer
 // A struct to store an input string and the position while parsing
-struct Tokenizer {
+pub struct Tokenizer<'a> {
     pos: usize,
-    input: String,
+    input: &'a str,
 }
 
-enum Token {
+#[derive(Clone,PartialEq)]
+pub enum Token {
     // General Tokens
+    Empty,
     WhitespaceToken,
     EOFToken,    // End of file
     DelimToken(char), // Anything else
@@ -22,6 +23,7 @@ enum Token {
     ColonToken,
     SemiColonToken,
     LeftSquareBracketToken,
+    RightSquareBracketToken,
     LeftCurlyBracketToken,
     RightCurlyBracketToken,
 
@@ -50,7 +52,15 @@ enum Token {
 
 // # Tokenizer
 // Implementation of a scanner. Consume characters and return tokens
-impl Tokenizer {
+impl<'a> Tokenizer<'a> {
+    // Constructor
+    pub fn new(css: &str) -> Tokenizer {
+        Tokenizer{
+            pos: 0,
+            input: css,
+        }
+    }
+
     //
     // Basic String scanning methods
     //
@@ -92,6 +102,21 @@ impl Tokenizer {
             result.push(self.consume_char());
         }
         return result;
+    }
+
+    pub fn consume_tokens(&mut self) -> Vec<Token> {
+        let mut tokens = Vec::new();
+        loop {
+            let token = self.consume_token();
+            match token {
+                Token::EOFToken => {
+                    tokens.push(token);
+                    break
+                },
+                _ => tokens.push(token),
+            }
+        }
+        return tokens;
     }
 
     // https://drafts.csswg.org/css-syntax/#consume-token
@@ -142,6 +167,8 @@ impl Tokenizer {
             '@' => self.consume_at_keyword_token(),
             // Left square bracket [
             '[' => self.consume_then_token(Token::LeftSquareBracketToken),
+            // Right square bracket ]
+            ']' => self.consume_then_token(Token::RightSquareBracketToken),
             // Left curly bracket {
             '{' => self.consume_then_token(Token::LeftCurlyBracketToken),
             // Right curly bracket }

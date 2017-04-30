@@ -1,6 +1,4 @@
-#[cfg(test)]
-mod test;
-
-pub mod scanner;
+pub mod tokenizer;
+pub mod parser;
 
 
