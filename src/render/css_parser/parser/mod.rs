@@ -101,10 +101,11 @@ impl Parser {
         if self.eot() {
             // Return a syntax error
             return Err("syntax");
-        } else if self.next_token() == Token::AtKeywordToken {
-            return Ok(self.consume_at_rule());
         } else {
-            rule = self.consume_qualified_rule();
+            match self.next_token() {
+                Token::AtKeywordToken(name) => return Ok(self.consume_at_rule()),
+                _ => rule = self.consume_qualified_rule(),
+            }
             // Return Syntax error if rule empty
         }
         self.consume_while(|c| c == Token::WhitespaceToken);
@@ -135,7 +136,7 @@ impl Parser {
     pub fn parse_component_value(&mut self) -> Result<ComponentValue, &str> {
         self.consume_while(|c| c == Token::WhitespaceToken);
         if self.next_token() == Token::EOFToken {
-            Err("syntax");
+            return Err("syntax");
         }
         let value = self.consume_component_value();
         self.consume_while(|c| c == Token::WhitespaceToken);
@@ -147,7 +148,7 @@ impl Parser {
     }
 
     pub fn parse_component_value_list(&mut self) -> Vec<ComponentValue> {
-        let values = Vec::new();
+        let mut values = Vec::new();
         while !self.eot() {
             values.push(self.consume_component_value());
         }
