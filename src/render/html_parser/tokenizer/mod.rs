@@ -175,6 +175,12 @@ impl<'a> Tokenizer<'a> {
                     Some(token) => tokens.push(token),
                     None => {},
                 }
+            },
+            State::EndTagOpenState => {
+                match self.consume_end_tag_open_state() {
+                    Some(ts) => tokens.extend(ts),
+                    None => {},
+                }
             }
 
             // TODO: Cover all states instead of using a catchall
@@ -349,7 +355,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::EndTagOpenState;
             },
             // ASCII Letter
-            'A' ... 'Z' | 'a' ... 'z' | '\u{0041}' ... '\u{005A}' | '\u{0061}' ... '\u{007A}' => {
+            x if is_ascii(x) => {
                 // Reconsume the character and move to the TagNameState
                 self.reconsume_char();
                 self.state = State::TagNameState;
@@ -362,7 +368,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::BogusCommentState;
 
                 // Create a comment token who's data is an emtpy string
-                return Some(Token::CommentToken(""))
+                return Some(Token::CommentToken(""));
             },
             _ => {
                 // TODO: Parse Error
@@ -378,5 +384,57 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
+    fn consume_end_tag_open_state(&mut self) -> Option<Vec<Token<'a>>> {
+        let mut tokens = Vec::new();
+        // Return an EOF token if there are no more characters. Do this before we try to
+        // consume another character.
+        if self.eof() {
+            // TODO: Parse error.
+            // Emit a U+003C LESS-THAN SIGN character token,
+            tokens.push(Token::CharToken('<'));
+            // a U+002F SOLIDUS character token
+            tokens.push(Token::CharToken('/'));
+            // and an end-of-file token.
+            tokens.push(Token::EOFToken);
+            return Some(tokens);
+        }
+
+        let cur = self.consume_char();
+        match cur {
+            x if is_ascii(x) => {
+                // Reconsume in the tag name state.
+                self.reconsume_char();
+                self.state = State::TagNameState;
+
+                // Create a new end tag token, set its tag name to the empty string.
+                tokens.push(Token::EndTagToken(Tag::new("")));
+                return Some(tokens);
+            },
+            '>' | '\u{003E}' => {
+                // TODO: Parse error.
+                // Switch to the data state.
+                self.state = State::DataState;
+            },
+            _ => {
+                // TODO: Parse error.
+                // Reconsume in the bogus comment state.
+                self.reconsume_char();
+                self.state = State::BogusCommentState;
+
+                // Create a comment token whose data is the empty string.
+                tokens.push(Token::CommentToken(""));
+                return Some(tokens);
+            }
+        }
+        return None;
+    }
+
 }
 
+
+fn is_ascii(c: char) -> bool {
+    match c {
+        'A' ... 'Z' | 'a' ... 'z' | '\u{0041}' ... '\u{005A}' | '\u{0061}' ... '\u{007A}' => true,
+        _ => false,
+    }
+}
