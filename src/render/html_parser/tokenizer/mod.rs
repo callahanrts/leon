@@ -6,7 +6,7 @@ enum Token<'a> {
     DoctypeToken(DoctypeData<'a>),
     StartTagToken(Tag<'a>),
     EndTagToken(Tag<'a>),
-    CommentToken,
+    CommentToken(&'a str),
     EOFToken,
     CharToken(char),
 }
@@ -54,6 +54,9 @@ enum State {
     DataState,
     CharReferenceState,
     TagOpenState,
+    EndTagOpenState,
+    TagNameState,
+    BogusCommentState,
 
     // RC States
     RCDataState,
@@ -66,6 +69,7 @@ enum State {
     ScriptDataLessThanSignState,
 
     PlaintextState,
+    MarkupDeclarationOpenState,
 }
 
 struct Tokenizer<'a> {
@@ -119,6 +123,10 @@ impl<'a> Tokenizer<'a> {
         return cur_char;
     }
 
+    fn reconsume_char(&mut self) {
+        self.pos -= 1;
+    }
+
     // Consume characters until test returns false
     fn consume_while<F>(&mut self, test: F) -> String where F: Fn(char) -> bool {
         let mut result = String::new();
@@ -158,6 +166,12 @@ impl<'a> Tokenizer<'a> {
             },
             State::PlaintextState => {
                 match self.consume_plaintext_state() {
+                    Some(token) => tokens.push(token),
+                    None => {},
+                }
+            },
+            State::TagOpenState => {
+                match self.consume_tag_open_state() {
                     Some(token) => tokens.push(token),
                     None => {},
                 }
@@ -322,4 +336,47 @@ impl<'a> Tokenizer<'a> {
         }
         return None;
     }
+
+    fn consume_tag_open_state(&mut self) -> Option<Token<'a>> {
+        // Consume the next input Char
+        let cur = self.consume_char();
+        match cur {
+            '!' | '\u{0021}' => {
+                // Switch to MarkupDeclarationOpenState
+                self.state = State::MarkupDeclarationOpenState;
+            },
+            '/' | '\u{002F}' => {
+                self.state = State::EndTagOpenState;
+            },
+            // ASCII Letter
+            'A' ... 'Z' | 'a' ... 'z' | '\u{0041}' ... '\u{005A}' | '\u{0061}' ... '\u{007A}' => {
+                // Reconsume the character and move to the TagNameState
+                self.reconsume_char();
+                self.state = State::TagNameState;
+                return Some(Token::StartTagToken(Tag::new("")));
+            },
+            '?' | '\u{003F}' => {
+                // TODO: Parse Error
+                // Reconsume character and enter the BogusCommentState
+                self.reconsume_char();
+                self.state = State::BogusCommentState;
+
+                // Create a comment token who's data is an emtpy string
+                return Some(Token::CommentToken(""))
+            },
+            _ => {
+                // TODO: Parse Error
+                // Reconsume character and enter the DataState
+                self.reconsume_char();
+                self.state = State::DataState;
+
+                // For everything else, return a '<' in a CharToken
+                return Some(Token::CharToken('<'));
+            },
+        }
+
+        return None;
+    }
+
 }
+
