@@ -37,23 +37,28 @@ fn solidus_end_tag_open_state() {
 fn ascii_character_tag_name_state() {
     let mut t = Tokenizer::new("abc");
     match t.consume_tag_open_state() {
-        Some(token) => {
-            match token {
-                Token::StartTagToken(tag) => {
-                    assert_eq!(tag.name, "");
-                },
-                _ => assert!(false),
-            }
+        Some(k) => assert!(false),
+        None => {
+            // Reconsumed
+            assert_eq!(t.next_char(), 'a');
+            // match t.current_token {
+            //     Some(token) => {
+            //         match token {
+            //             Token::StartTagToken(tag) => {
+            //                 assert_eq!(tag.name, "");
+            //             },
+            //             _ => assert!(false),
+            //         }
+            //     },
+            //     _ => assert!(false),
+            // }
 
             match t.state {
                 State::TagNameState => assert!(true),
                 _ => assert!(false)
             }
         },
-        None => assert!(false),
     }
-    // Reconsumed
-    assert_eq!(t.next_char(), 'a');
 }
 
 #[test]
@@ -62,22 +67,27 @@ fn ascii_character_tag_name_state() {
 fn question_bogus_comment_state() {
     let mut t = Tokenizer::new("?");
     match t.consume_tag_open_state() {
-        Some(token) => {
-            match token {
-                Token::CommentToken(c) => {
-                    assert_eq!(c, "");
-                },
+        Some(_) => assert!(false),
+        None => {
+            assert_eq!(t.next_char(), '?');
+            match t.state {
+                State::BogusCommentState => assert!(true),
                 _ => assert!(false),
             }
+            // match t.current_token {
+            //     None => assert!(false),
+            //     Some(token) => {
+            //         match token {
+            //             Token::CommentToken(c) => {
+            //                 assert_eq!(c, "");
+            //             },
+            //             _ => assert!(false),
+            //         }
+            //     },
+            // }
         },
-        None => assert!(false),
     }
 
-    match t.state {
-        State::BogusCommentState => assert!(true),
-        _ => assert!(false),
-    }
-    assert_eq!(t.next_char(), '?');
 }
 
 #[test]

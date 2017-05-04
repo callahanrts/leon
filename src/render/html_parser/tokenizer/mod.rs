@@ -2,52 +2,70 @@
 #[cfg(test)]
 mod test;
 
-enum Token<'a> {
-    DoctypeToken(DoctypeData<'a>),
-    StartTagToken(Tag<'a>),
-    EndTagToken(Tag<'a>),
-    CommentToken(&'a str),
+enum Token {
+    Empty,
+    DoctypeToken(DoctypeData),
+    StartTagToken(Tag),
+    EndTagToken(Tag),
+    CommentToken(String),
     EOFToken,
     CharToken(char),
 }
 
-struct DoctypeData<'a> {
-    name: &'a str,
-    public_identifier: &'a str,
-    system_identifier: &'a str,
+struct DoctypeData {
+    name: String,
+    public_identifier: String,
+    system_identifier: String,
     force_quirks: bool,
 }
 
-impl<'a> DoctypeData<'a> {
-    pub fn new(name: &'a str) -> DoctypeData<'a> {
+impl DoctypeData {
+    pub fn new(name: String) -> DoctypeData {
         DoctypeData{
             name: name,
-            public_identifier: "",
-            system_identifier: "",
+            public_identifier: String::from(""),
+            system_identifier: String::from(""),
             force_quirks: false,
         }
     }
 }
 
-struct Tag<'a> {
-    name: &'a str,
+#[derive(Clone)]
+struct Tag {
+    name: String,
     self_closing: bool,
-    attributes: Vec<Attribute<'a>>,
+    attributes: Vec<Attribute>,
 }
 
-impl<'a> Tag<'a> {
-    pub fn new(name: &'a str) -> Tag<'a> {
+impl Tag {
+    pub fn new(name: String) -> Tag {
         Tag {
             name: name,
             self_closing: false,
             attributes: Vec::new(),
         }
     }
+    pub fn append_name(&mut self, letter: char) {
+        self.name.push(letter);
+    }
+
+    pub fn name(&mut self) -> String {
+        self.name.clone()
+    }
+
+    pub fn self_closing(&mut self) -> bool {
+        self.self_closing.clone()
+    }
+
+    pub fn attributes(&mut self) -> Vec<Attribute> {
+        self.attributes.clone()
+    }
 }
 
-struct Attribute<'a> {
-    name: &'a str,
-    value: &'a str,
+#[derive(Clone)]
+struct Attribute {
+    name: String,
+    value: String,
 }
 
 enum State {
@@ -57,6 +75,8 @@ enum State {
     EndTagOpenState,
     TagNameState,
     BogusCommentState,
+    BeforeAttrNameState,
+    SelfClosingStartTagState,
 
     // RC States
     RCDataState,
@@ -77,15 +97,17 @@ struct Tokenizer<'a> {
     input: &'a str,
     state: State,
     return_state: State,
+    current_token: Option<Token>,
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(input: &str) -> Tokenizer {
+    pub fn new(input: &'a str) -> Tokenizer {
         Tokenizer {
             pos: 0,
             input: input,
             state: State::DataState,
             return_state: State::DataState,
+            current_token: None,
         }
     }
 
@@ -136,7 +158,7 @@ impl<'a> Tokenizer<'a> {
         return result;
     }
 
-    pub fn consume_token(&mut self) -> Vec<Token<'a>> {
+    pub fn consume_token(&mut self) -> Vec<Token> {
         // Some states can emit more than one token
         let mut tokens = Vec::new();
         match self.state {
@@ -181,6 +203,14 @@ impl<'a> Tokenizer<'a> {
                     Some(ts) => tokens.extend(ts),
                     None => {},
                 }
+            },
+            State::TagNameState => {
+                match self.consume_tag_name_state() {
+                    Some(token) => {
+                        // tokens.push(token.clone());
+                    },
+                    None => {},
+                }
             }
 
             // TODO: Cover all states instead of using a catchall
@@ -194,7 +224,7 @@ impl<'a> Tokenizer<'a> {
     // Tokenizer States
     //
 
-    fn consume_data_state(&mut self) -> Option<Token<'a>> {
+    fn consume_data_state(&mut self) -> Option<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
@@ -228,7 +258,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_rcdata_state(&mut self) -> Option<Token<'a>> {
+    fn consume_rcdata_state(&mut self) -> Option<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
@@ -263,7 +293,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_rawtext_state(&mut self) -> Option<Token<'a>> {
+    fn consume_rawtext_state(&mut self) -> Option<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
@@ -291,7 +321,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_script_data_state(&mut self) -> Option<Token<'a>> {
+    fn consume_script_data_state(&mut self) -> Option<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
@@ -319,7 +349,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_plaintext_state(&mut self) -> Option<Token<'a>> {
+    fn consume_plaintext_state(&mut self) -> Option<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
@@ -343,7 +373,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_tag_open_state(&mut self) -> Option<Token<'a>> {
+    fn consume_tag_open_state(&mut self) -> Option<Token> {
         // Consume the next input Char
         let cur = self.consume_char();
         match cur {
@@ -359,7 +389,7 @@ impl<'a> Tokenizer<'a> {
                 // Reconsume the character and move to the TagNameState
                 self.reconsume_char();
                 self.state = State::TagNameState;
-                return Some(Token::StartTagToken(Tag::new("")));
+                self.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
             },
             '?' | '\u{003F}' => {
                 // TODO: Parse Error
@@ -368,7 +398,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::BogusCommentState;
 
                 // Create a comment token who's data is an emtpy string
-                return Some(Token::CommentToken(""));
+                self.current_token = Some(Token::CommentToken(String::new()));
             },
             _ => {
                 // TODO: Parse Error
@@ -384,7 +414,7 @@ impl<'a> Tokenizer<'a> {
         return None;
     }
 
-    fn consume_end_tag_open_state(&mut self) -> Option<Vec<Token<'a>>> {
+    fn consume_end_tag_open_state(&mut self) -> Option<Vec<Token>> {
         let mut tokens = Vec::new();
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
@@ -407,8 +437,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::TagNameState;
 
                 // Create a new end tag token, set its tag name to the empty string.
-                tokens.push(Token::EndTagToken(Tag::new("")));
-                return Some(tokens);
+                self.current_token = Some(Token::EndTagToken(Tag::new(String::new())));
             },
             '>' | '\u{003E}' => {
                 // TODO: Parse error.
@@ -422,11 +451,86 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::BogusCommentState;
 
                 // Create a comment token whose data is the empty string.
-                tokens.push(Token::CommentToken(""));
-                return Some(tokens);
+                self.current_token = Some(Token::CommentToken(String::from("")));
             }
         }
         return None;
+    }
+
+    fn consume_tag_name_state(&mut self) -> Option<Token> {
+        // Return an EOF token if there are no more characters. Do this before we try to
+        // consume another character.
+        if self.eof() {
+            return Some(Token::EOFToken);
+        }
+
+        let cur = self.consume_char();
+        match cur {
+            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+                // Switch to the before attribute name state.
+                self.state = State::BeforeAttrNameState;
+            },
+            '/' | '\u{002F}' => {
+                // Switch to the self-closing start tag state.
+                self.state = State::SelfClosingStartTagState;
+            },
+            '>' | '\u{003E}' => {
+                // Switch to the data state.
+                self.state = State::DataState;
+
+                // Emit the current tag token.
+                return Some(self.current_token());
+            },
+            'A' ... 'Z' | '\u{0041}' ... '\u{005A}' => {
+                // Append the lowercase version of the current input character (add 0x0020
+                // to the character’s code point) to the current tag token’s tag name.
+                self.append_char_to_tag_name(cur.to_lowercase().collect::<Vec<_>>()[0]);
+            },
+            '\u{0000}' => {
+                // TODO: Parse error.
+                // Append a U+FFFD REPLACEMENT CHARACTER character to the current tag token’s tag name.
+                self.append_char_to_tag_name('\u{FFFD}');
+            },
+            _ => {
+                // Append the current input character to the current tag token’s tag name.
+                self.append_char_to_tag_name(cur);
+            }
+
+        }
+
+        return None;
+    }
+
+    //
+    // Helpers
+    //
+    fn append_char_to_tag_name(&mut self, letter: char) {
+        match self.current_token() {
+            Token::StartTagToken(mut tag) => {
+                tag.append_name(letter);
+                self.current_token = Some(Token::StartTagToken(tag))
+            },
+            _ => {
+                panic!("Unimplemented token");
+            }
+        };
+    }
+
+    // I fought the compiler a lot with this one and append_chart_to_tag_name.
+    // It's likely I'm missing something
+    // TODO: Come back to this function in the future and make it better.
+    fn current_token(&mut self) -> Token {
+        match self.current_token {
+            Some(ref mut t) => {
+                match *t {
+                    Token::StartTagToken(ref mut tag) => {
+                        return Token::StartTagToken(tag.clone());
+                    }
+                    _ => panic!("Unimplemented token")
+                }
+            }
+            None => panic!("No token found")
+        }
     }
 
 }
