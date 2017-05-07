@@ -5,12 +5,9 @@ use super::*;
 // If the parser is currently at the EOF, an EOF token should be returned
 fn eof_should_return_eof_token() {
     let mut t = Tokenizer::new("");
-    match t.consume_rawtext_state() {
-        Some(t) => match t {
-            Token::EOFToken => assert!(true),
-            _ => assert!(false),
-        },
-        None => assert!(false),
+    match *t.consume_rawtext_state().first().unwrap() {
+        Token::EOFToken => assert!(true),
+        _ => assert!(false),
     }
 }
 
@@ -19,14 +16,11 @@ fn eof_should_return_eof_token() {
 // a RawtextLessThanSignState
 fn less_than_should_open_tag_state() {
     let mut t = Tokenizer::new("<div>");
-    match t.consume_rawtext_state() {
-        Some(t) => assert!(false),
-        None => {
-            match t.state {
-                State::RawtextLessThanSignState => assert!(true),
-                _ => assert!(false),
-            }
-        }
+    let tokens = t.consume_rawtext_state();
+    assert_eq!(tokens.len(), 0);
+    match t.state {
+        State::RawtextLessThanSignState => assert!(true),
+        _ => assert!(false),
     }
 }
 
@@ -45,13 +39,8 @@ fn chars_should_return_char_token() {
 }
 
 fn assert_char_token(t: &mut Tokenizer, expected: char) {
-    match t.consume_rawtext_state() {
-        Some(t) => {
-            match t {
-                Token::CharToken(c) => assert_eq!(c, expected),
-                _ => assert!(false),
-            }
-        },
-        None => assert!(false),
+    match *t.consume_rawtext_state().first().unwrap() {
+        Token::CharToken(c) => assert_eq!(c, expected),
+        _ => assert!(false),
     }
 }

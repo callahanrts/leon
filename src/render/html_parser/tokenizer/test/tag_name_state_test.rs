@@ -5,14 +5,12 @@ use super::*;
 // If the parser is currently at the EOF, an EOF token should be returned
 fn eof_should_return_eof_token() {
     let mut t = Tokenizer::new("");
-    match t.consume_rawtext_state() {
-        Some(t) => match t {
-            Token::EOFToken => assert!(true),
-            _ => assert!(false),
-        },
-        None => assert!(false),
+    match *t.consume_tag_name_state().first().unwrap() {
+        Token::EOFToken => assert!(true),
+        _ => assert!(false),
     }
 }
+
 
 
 #[test]
@@ -20,14 +18,11 @@ fn eof_should_return_eof_token() {
 // BeforeAttributeNameState
 fn whitespace_to_before_attr_name_state() {
     let mut t = Tokenizer::new(" ");
-    match t.consume_tag_name_state() {
-        Some(t) => assert!(false),
-        None => {
-            match t.state {
-                State::BeforeAttrNameState => assert!(true),
-                _ => assert!(false)
-            }
-        }
+    let tokens = t.consume_tag_name_state();
+    assert_eq!(tokens.len(), 0);
+    match t.state {
+        State::BeforeAttrNameState => assert!(true),
+        _ => assert!(false)
     }
 }
 
@@ -35,14 +30,11 @@ fn whitespace_to_before_attr_name_state() {
 // Solidus '/' should send the state machine to the SelfClosingStartTagState
 fn solidus_self_close_start_tag() {
     let mut t = Tokenizer::new("/");
-    match t.consume_tag_name_state() {
-        Some(t) => assert!(false),
-        None => {
-            match t.state {
-                State::SelfClosingStartTagState => assert!(true),
-                _ => assert!(false)
-            }
-        }
+    let tokens = t.consume_tag_name_state();
+    assert_eq!(tokens.len(), 0);
+    match t.state {
+        State::SelfClosingStartTagState => assert!(true),
+        _ => assert!(false)
     }
 }
 
@@ -51,16 +43,14 @@ fn solidus_self_close_start_tag() {
 fn gt_data_state(){
     let mut t = Tokenizer::new(">");
     t.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
-    match t.consume_tag_name_state() {
-        Some(tag) => {
-            match t.state {
-                State::DataState => assert!(true),
-                _ => assert!(false)
-            }
-        },
-        None => assert!(false)
+    let tokens = t.consume_tag_name_state();
+    assert!(tokens.len() > 0);
+    match t.state {
+        State::DataState => assert!(true),
+        _ => assert!(false)
     }
 }
+
 
 #[test]
 // Upper case ASCII char should append the lowercase version of the current character to the
@@ -85,10 +75,9 @@ fn char_tag_name() {
 fn assert_append_char(cur: String, input: &str, end: String) {
     let mut t = Tokenizer::new(input);
     t.current_token = Some(Token::StartTagToken(Tag::new(cur)));
-    match t.consume_tag_name_state() {
-        Some(t) => assert!(false),
-        None => assert!(true)
-    }
+    let tokens = t.consume_tag_name_state();
+    assert_eq!(tokens.len(), 0);
+
     match t.current_token {
         Some(token) => {
             match token {

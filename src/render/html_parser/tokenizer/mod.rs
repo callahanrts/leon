@@ -2,6 +2,7 @@
 #[cfg(test)]
 mod test;
 
+#[derive(Clone)]
 enum Token {
     Empty,
     DoctypeToken(DoctypeData),
@@ -12,6 +13,7 @@ enum Token {
     CharToken(char),
 }
 
+#[derive(Clone)]
 struct DoctypeData {
     name: String,
     public_identifier: String,
@@ -81,12 +83,16 @@ enum State {
     // RC States
     RCDataState,
     RCDataLessThanSignState,
+    RCDataEndTagOpenState,
+    RCDataEndTagNameState,
 
     RawtextState,
     RawtextLessThanSignState,
 
     ScriptDataState,
     ScriptDataLessThanSignState,
+    // ScriptDataEscapedDashDashState,
+    // ScriptDataEscapeStartSlashState,
 
     PlaintextState,
     MarkupDeclarationOpenState,
@@ -98,6 +104,7 @@ struct Tokenizer<'a> {
     state: State,
     return_state: State,
     current_token: Option<Token>,
+    tokens: Vec<Token>,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -108,6 +115,7 @@ impl<'a> Tokenizer<'a> {
             state: State::DataState,
             return_state: State::DataState,
             current_token: None,
+            tokens: Vec::new(),
         }
     }
 
@@ -160,229 +168,182 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_token(&mut self) -> Vec<Token> {
         // Some states can emit more than one token
-        let mut tokens = Vec::new();
         match self.state {
-            State::DataState => {
-                match self.consume_data_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::RCDataState => {
-                match self.consume_rcdata_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::RawtextState => {
-                match self.consume_rawtext_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::ScriptDataState => {
-                match self.consume_script_data_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::PlaintextState => {
-                match self.consume_plaintext_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::TagOpenState => {
-                match self.consume_tag_open_state() {
-                    Some(token) => tokens.push(token),
-                    None => {},
-                }
-            },
-            State::EndTagOpenState => {
-                match self.consume_end_tag_open_state() {
-                    Some(ts) => tokens.extend(ts),
-                    None => {},
-                }
-            },
-            State::TagNameState => {
-                match self.consume_tag_name_state() {
-                    Some(token) => {
-                        // tokens.push(token.clone());
-                    },
-                    None => {},
-                }
-            }
+            State::DataState => self.consume_data_state(),
+            State::RCDataState => self.consume_rcdata_state(),
+            State::RawtextState => self.consume_rawtext_state(),
+            State::ScriptDataState => self.consume_script_data_state(),
+            State::PlaintextState => self.consume_plaintext_state(),
+            State::TagOpenState => self.consume_tag_open_state(),
+            State::EndTagOpenState => self.consume_end_tag_open_state(),
+            State::TagNameState => self.consume_tag_name_state(),
+            State::RCDataLessThanSignState => self.consume_rcdata_less_than_sign_state(),
+            State::RCDataEndTagOpenState => self.consume_rcdata_end_tag_open_state(),
 
             // TODO: Cover all states instead of using a catchall
-            _ => {}
+            _ => Vec::new()
         }
-
-        return tokens;
     }
 
     //
     // Tokenizer States
     //
 
-    fn consume_data_state(&mut self) -> Option<Token> {
+    fn consume_data_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             '&' | '\u{0026}' => {
                 // Set the return state to the data state
                 self.return_state = State::DataState;
                 // Switch to the character reference state
                 self.state = State::CharReferenceState;
+                return Vec::new();
             }
             '<' | '\u{003C}' => {
                 // Switch to the tag open state. We're reading an open tag
                 self.state = State::TagOpenState;
+                return Vec::new();
             }
             // Null character
             '\u{0000}' => {
                 // TODO: Parse error
                 // Return character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken('\u{0000}'));
             }
-            _ => {
+            cur => {
                 // For everything else, return the character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken(cur));
             }
         }
-        return None;
     }
 
-    fn consume_rcdata_state(&mut self) -> Option<Token> {
+    fn consume_rcdata_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             '&' | '\u{0026}' => {
                 // Set the return state to the RCDATA state.
                 self.return_state = State::RCDataState;
 
                 // Switch to the character reference state.
                 self.state = State::CharReferenceState;
+                return Vec::new();
             }
             '<' | '\u{003C}' => {
                 self.state = State::RCDataLessThanSignState;
+                return Vec::new();
             }
             // Null character
             '\u{0000}' => {
                 // TODO: Parse error
                 // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                return Some(Token::CharToken('\u{FFFD}'));
+                return vec_with_token(Token::CharToken('\u{FFFD}'));
             }
-            _ => {
+            cur => {
                 // For everything else, return the character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken(cur));
             }
         }
-
-        return None;
     }
 
-    fn consume_rawtext_state(&mut self) -> Option<Token> {
+    fn consume_rawtext_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             '<' | '\u{003C}' => {
                 // Switch to RawtextLessThanSignState
                 self.state = State::RawtextLessThanSignState;
+                return Vec::new();
             }
             // Null character
             '\u{0000}' => {
                 // TODO: Parse error
                 // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                return Some(Token::CharToken('\u{FFFD}'));
+                return vec_with_token(Token::CharToken('\u{FFFD}'));
             }
-            _ => {
+            cur => {
                 // For everything else, return the character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken(cur));
             }
         }
-        return None;
     }
 
-    fn consume_script_data_state(&mut self) -> Option<Token> {
+    fn consume_script_data_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             '<' | '\u{003C}' => {
                 // Switch to RawtextLessThanSignState
                 self.state = State::ScriptDataLessThanSignState;
+                return Vec::new();
             }
             // Null character
             '\u{0000}' => {
                 // TODO: Parse error
                 // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                return Some(Token::CharToken('\u{FFFD}'));
+                return vec_with_token(Token::CharToken('\u{FFFD}'));
             }
-            _ => {
+            cur => {
                 // For everything else, return the character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken(cur));
             }
-        }
-        return None;
+        };
     }
 
-    fn consume_plaintext_state(&mut self) -> Option<Token> {
+    fn consume_plaintext_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             // Null character
             '\u{0000}' => {
                 // TODO: Parse error
                 // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                return Some(Token::CharToken('\u{FFFD}'));
+                return vec_with_token(Token::CharToken('\u{FFFD}'));
             }
-            _ => {
+            cur => {
                 // For everything else, return the character in a CharToken
-                return Some(Token::CharToken(cur));
+                return vec_with_token(Token::CharToken(cur));
             }
         }
-        return None;
     }
 
-    fn consume_tag_open_state(&mut self) -> Option<Token> {
+    fn consume_tag_open_state(&mut self) -> Vec<Token> {
         // Consume the next input Char
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             '!' | '\u{0021}' => {
                 // Switch to MarkupDeclarationOpenState
                 self.state = State::MarkupDeclarationOpenState;
+                return Vec::new();
             },
             '/' | '\u{002F}' => {
                 self.state = State::EndTagOpenState;
+                return Vec::new();
             },
             // ASCII Letter
             x if is_ascii(x) => {
@@ -390,6 +351,7 @@ impl<'a> Tokenizer<'a> {
                 self.reconsume_char();
                 self.state = State::TagNameState;
                 self.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
+                return Vec::new();
             },
             '?' | '\u{003F}' => {
                 // TODO: Parse Error
@@ -399,6 +361,7 @@ impl<'a> Tokenizer<'a> {
 
                 // Create a comment token who's data is an emtpy string
                 self.current_token = Some(Token::CommentToken(String::new()));
+                return Vec::new();
             },
             _ => {
                 // TODO: Parse Error
@@ -407,18 +370,16 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::DataState;
 
                 // For everything else, return a '<' in a CharToken
-                return Some(Token::CharToken('<'));
+                return vec_with_token(Token::CharToken('<'));
             },
         }
-
-        return None;
     }
 
-    fn consume_end_tag_open_state(&mut self) -> Option<Vec<Token>> {
-        let mut tokens = Vec::new();
+    fn consume_end_tag_open_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
+            let mut tokens = Vec::new();
             // TODO: Parse error.
             // Emit a U+003C LESS-THAN SIGN character token,
             tokens.push(Token::CharToken('<'));
@@ -426,11 +387,10 @@ impl<'a> Tokenizer<'a> {
             tokens.push(Token::CharToken('/'));
             // and an end-of-file token.
             tokens.push(Token::EOFToken);
-            return Some(tokens);
+            return tokens;
         }
 
-        let cur = self.consume_char();
-        match cur {
+        match self.consume_char() {
             x if is_ascii(x) => {
                 // Reconsume in the tag name state.
                 self.reconsume_char();
@@ -438,11 +398,13 @@ impl<'a> Tokenizer<'a> {
 
                 // Create a new end tag token, set its tag name to the empty string.
                 self.current_token = Some(Token::EndTagToken(Tag::new(String::new())));
+                return Vec::new();
             },
             '>' | '\u{003E}' => {
                 // TODO: Parse error.
                 // Switch to the data state.
                 self.state = State::DataState;
+                return Vec::new();
             },
             _ => {
                 // TODO: Parse error.
@@ -452,16 +414,16 @@ impl<'a> Tokenizer<'a> {
 
                 // Create a comment token whose data is the empty string.
                 self.current_token = Some(Token::CommentToken(String::from("")));
+                return Vec::new();
             }
         }
-        return None;
     }
 
-    fn consume_tag_name_state(&mut self) -> Option<Token> {
+    fn consume_tag_name_state(&mut self) -> Vec<Token> {
         // Return an EOF token if there are no more characters. Do this before we try to
         // consume another character.
         if self.eof() {
-            return Some(Token::EOFToken);
+            return vec_with_token(Token::EOFToken);
         }
 
         let cur = self.consume_char();
@@ -469,37 +431,145 @@ impl<'a> Tokenizer<'a> {
             '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
                 // Switch to the before attribute name state.
                 self.state = State::BeforeAttrNameState;
+                return Vec::new();
             },
             '/' | '\u{002F}' => {
                 // Switch to the self-closing start tag state.
                 self.state = State::SelfClosingStartTagState;
+                return Vec::new();
             },
             '>' | '\u{003E}' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 
                 // Emit the current tag token.
-                return Some(self.current_token());
+                return vec_with_token(self.current_token());
             },
             'A' ... 'Z' | '\u{0041}' ... '\u{005A}' => {
                 // Append the lowercase version of the current input character (add 0x0020
                 // to the character’s code point) to the current tag token’s tag name.
                 self.append_char_to_tag_name(cur.to_lowercase().collect::<Vec<_>>()[0]);
+                return Vec::new();
             },
             '\u{0000}' => {
                 // TODO: Parse error.
                 // Append a U+FFFD REPLACEMENT CHARACTER character to the current tag token’s tag name.
                 self.append_char_to_tag_name('\u{FFFD}');
+                return Vec::new()
             },
             _ => {
                 // Append the current input character to the current tag token’s tag name.
                 self.append_char_to_tag_name(cur);
+                return Vec::new()
             }
 
         }
-
-        return None;
     }
+
+    fn consume_rcdata_less_than_sign_state(&mut self) -> Vec<Token> {
+        let cur = self.consume_char();
+        match cur {
+            '/' | '\u{002F}' => {
+                // Set the temporary buffer to the empty string.
+                // Switch to the RCDATA end tag open state.
+                self.state = State::RCDataEndTagOpenState;
+                return Vec::new();
+            }
+            _ => {
+                let mut tokens = Vec::new();
+                // Reconsume in the RCDATA state.
+                self.reconsume_char();
+                self.state = State::RCDataState;
+
+                // Emit a U+003C LESS-THAN SIGN character token.
+                tokens.push(Token::CharToken('<'));
+                return tokens;
+            }
+        }
+    }
+
+    fn consume_rcdata_end_tag_open_state(&mut self) -> Vec<Token> {
+        let cur = self.consume_char();
+        match cur {
+            // ASCII Letter
+            x if is_ascii(x) => {
+                // Create a new end tag token, set its tag name to the empty string.
+                self.current_token = Some(Token::EndTagToken(Tag::new(String::new())));
+
+                // Reconsume in RCDATA end tag name state.
+                self.reconsume_char();
+                self.state = State::RCDataEndTagNameState;
+                return Vec::new();
+            }
+            _ => {
+                // Reconsume in the RCDATA state.
+                self.reconsume_char();
+                self.state = State::RCDataState;
+
+                let mut tokens = Vec::new();
+                // Emit a U+003C LESS-THAN SIGN character token
+                tokens.push(Token::CharToken('<'));
+                // and a U+002F SOLIDUS character token.
+                tokens.push(Token::CharToken('/'));
+                return tokens;
+            }
+        };
+    }
+
+    fn consume_rcdata_end_tag_name_state(&mut self) -> Vec<Token> {
+        let mut tokens = Vec::new();
+
+        let cur = self.consume_char();
+        match cur {
+            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+                // If the current end tag token is an appropriate end tag token,
+                // then switch to the before attribute name state.
+                // Otherwise, treat it as per the "anything else" entry below.
+            },
+            '/' | '\u{002f}' => {
+                // If the current end tag token is an appropriate end tag token,
+                // then switch to the self-closing start tag state.
+                // Otherwise, treat it as per the "anything else" entry below.
+            },
+            '>' | '\u{003E}' => {
+                // If the current end tag token is an appropriate end tag token,
+                // then switch to the data state and emit the current tag token.
+                // Otherwise, treat it as per the "anything else" entry below.
+            },
+            x if is_upper_ascii(x) => {
+                // Append the lowercase version of the current input character (add 0x0020
+                // to the character’s code point) to the current tag token’s tag name.
+                // Append the current input character to the temporary buffer.
+            },
+            x if is_lower_ascii(x) => {
+                // Append the current input character to the current tag token’s tag name.
+                // Append the current input character to the temporary buffer.
+            },
+            _ => {
+                // Emit a U+003C LESS-THAN SIGN character token,
+                // a U+002F SOLIDUS character token,
+                // and a character token for each of the characters in the temporary
+                // buffer (in the order they were added to the buffer).
+                // Reconsume in the RCDATA state.
+            }
+        }
+        return tokens;
+    }
+
+    // fn consume_script_data_escape_start_slash_state(&mut self) -> Option<Token> {
+    //     let cur = self.consume_char();
+    //     match cur {
+    //         '-' | '\u{002D}' => {
+    //             self.state = State::ScriptDataEscapedDashDashState;
+    //             return Some(Token::CharToken('-'));
+    //         }
+    //         _ => {
+    //             self.reconsume_char();
+    //             self.state = State::ScriptDataState;
+    //         }
+    //     }
+    //     return None;
+    // }
 
     //
     // Helpers
@@ -535,10 +605,26 @@ impl<'a> Tokenizer<'a> {
 
 }
 
-
-fn is_ascii(c: char) -> bool {
+fn is_upper_ascii(c: char) -> bool {
     match c {
-        'A' ... 'Z' | 'a' ... 'z' | '\u{0041}' ... '\u{005A}' | '\u{0061}' ... '\u{007A}' => true,
+        'A' ... 'Z' | '\u{0041}' ... '\u{005A}' => true,
         _ => false,
     }
+}
+
+fn is_lower_ascii(c: char) -> bool {
+    match c {
+        'a' ... 'z' | '\u{0061}' ... '\u{007A}' => true,
+        _ => false
+    }
+}
+
+fn is_ascii(c: char) -> bool {
+    is_upper_ascii(c) || is_lower_ascii(c)
+}
+
+fn vec_with_token(t: Token) -> Vec<Token> {
+    let mut tokens = Vec::new();
+    tokens.push(t);
+    return tokens;
 }
