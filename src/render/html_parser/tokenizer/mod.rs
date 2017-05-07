@@ -88,6 +88,8 @@ enum State {
 
     RawtextState,
     RawtextLessThanSignState,
+    RawtextEndTagOpenState,
+    RawtextEndTagNameState,
 
     ScriptDataState,
     ScriptDataLessThanSignState,
@@ -182,6 +184,9 @@ impl<'a> Tokenizer<'a> {
             State::RCDataLessThanSignState => self.consume_rcdata_less_than_sign_state(),
             State::RCDataEndTagOpenState => self.consume_rcdata_end_tag_open_state(),
             State::RCDataEndTagNameState => self.consume_rcdata_end_tag_name_state(),
+            State::RawtextLessThanSignState => self.consume_rawtext_less_than_sign_state(),
+            State::RawtextEndTagOpenState => self.consume_rawtext_end_tag_open_state(),
+            State::RawtextEndTagNameState => self.consume_rawtext_end_tag_name_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
@@ -520,68 +525,12 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn consume_rcdata_end_tag_name_state(&mut self) -> Vec<Token> {
-        let cur = self.consume_char();
-        match cur {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
-                // If the current end tag token is an appropriate end tag token,
-                if self.is_appropriate_end_tag_token() {
-                    // then switch to the before attribute name state.
-                    self.state = State::BeforeAttrNameState;
-                    Vec::new()
-                } else {
-                    // Otherwise, treat it as per the "anything else" entry below.
-                    self.handle_end_tag_name()
-                }
-            },
-            '/' | '\u{002f}' => {
-                // If the current end tag token is an appropriate end tag token,
-                if self.is_appropriate_end_tag_token() {
-                    // then switch to the self-closing start tag state.
-                    self.state = State::SelfClosingStartTagState;
-                    Vec::new()
-                } else {
-                    // Otherwise, treat it as per the "anything else" entry below.
-                    self.handle_end_tag_name()
-                }
-            },
-            '>' | '\u{003E}' => {
-                // If the current end tag token is an appropriate end tag token,
-                if self.is_appropriate_end_tag_token() {
-                    // then switch to the data state and emit the current tag token.
-                    self.state = State::DataState;
-                    vec_with_token(self.current_token())
-                } else {
-                    println!("HANDLE END TAG NAME");
-                    // Otherwise, treat it as per the "anything else" entry below.
-                    self.handle_end_tag_name()
-                }
-            },
-            x if is_upper_ascii(x) => {
-                // Append the lowercase version of the current input character (add 0x0020
-                // to the character’s code point) to the current tag token’s tag name.
-                self.append_char_to_tag_name(lowercase_char(cur));
-
-                // Append the current input character to the temporary buffer.
-                self.tmp_buffer.push(x);
-                Vec::new()
-            },
-            x if is_lower_ascii(x) => {
-                // Append the current input character to the current tag token’s tag name.
-                self.append_char_to_tag_name(cur);
-
-                // Append the current input character to the temporary buffer.
-                self.tmp_buffer.push(x);
-                Vec::new()
-            },
-            _ => {
-                return self.handle_end_tag_name();
-            }
-        }
+        self.consume_end_tag_name_state(State::RCDataState)
     }
 
     // This is the anything else portion of an end tag name state.
     // TODO: Name this more descriptively
-    fn handle_end_tag_name(&mut self) -> Vec<Token> {
+    fn handle_end_tag_name(&mut self, new_state: State) -> Vec<Token> {
         let mut tokens = Vec::new();
         // Emit a U+003C LESS-THAN SIGN character token,
         tokens.push(Token::CharToken('<'));
@@ -597,8 +546,118 @@ impl<'a> Tokenizer<'a> {
 
         // Reconsume in the RCDATA state.
         self.reconsume_char();
-        self.state = State::RCDataState;
+        self.state = new_state;
         return tokens;
+    }
+
+    fn consume_rawtext_less_than_sign_state(&mut self) -> Vec<Token> {
+        match self.consume_char() {
+            '/' | '\u{002F}' => {
+                // Set the temporary buffer to the empty string.
+                self.tmp_buffer = String::new();
+
+                // Switch to the RAWTEXT end tag open state.
+                self.state = State::RawtextEndTagOpenState;
+                Vec::new()
+            },
+            _ => {
+                // Reconsume in the RAWTEXT state.
+                self.reconsume_char();
+                self.state = State::RawtextState;
+
+                // Emit a U+003C LESS-THAN SIGN character token.
+                vec_with_token(Token::CharToken('<'))
+            }
+        }
+    }
+
+    fn consume_rawtext_end_tag_open_state(&mut self) -> Vec<Token> {
+        match self.consume_char() {
+            x if is_ascii(x) => {
+                // Create a new end tag token, set its tag name to the empty string.
+                self.current_token = Some(Token::EndTagToken(Tag::new(String::new())));
+
+                // Reconsume in the RAWTEXT end tag name state.
+                self.reconsume_char();
+                self.state = State::RawtextEndTagNameState;
+                Vec::new()
+            }
+            _ => {
+                // Reconsume in the RAWTEXT state.
+                self.reconsume_char();
+                self.state = State::RawtextState;
+
+                let mut tokens = Vec::new();
+                // Emit a U+003C LESS-THAN SIGN character token
+                // and a U+002F SOLIDUS character token.
+                tokens.push(Token::CharToken('<'));
+                tokens.push(Token::CharToken('/'));
+                tokens
+            }
+        }
+    }
+
+    fn consume_rawtext_end_tag_name_state(&mut self) -> Vec<Token> {
+        self.consume_end_tag_name_state(State::RawtextState)
+    }
+
+
+    fn consume_end_tag_name_state(&mut self, new_state: State) -> Vec<Token> {
+        match self.consume_char() {
+            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+                // If the current end tag token is an appropriate end tag token,
+                if self.is_appropriate_end_tag_token() {
+                    // then switch to the before attribute name state.
+                    self.state = State::BeforeAttrNameState;
+                    Vec::new()
+                } else {
+                    // Otherwise, treat it as per the "anything else" entry below.
+                    self.handle_end_tag_name(new_state)
+                }
+            },
+            '/' | '\u{002f}' => {
+                // If the current end tag token is an appropriate end tag token,
+                if self.is_appropriate_end_tag_token() {
+                    // then switch to the self-closing start tag state.
+                    self.state = State::SelfClosingStartTagState;
+                    Vec::new()
+                } else {
+                    // Otherwise, treat it as per the "anything else" entry below.
+                    self.handle_end_tag_name(new_state)
+                }
+            },
+            '>' | '\u{003E}' => {
+                // If the current end tag token is an appropriate end tag token,
+                if self.is_appropriate_end_tag_token() {
+                    // then switch to the data state and emit the current tag token.
+                    self.state = State::DataState;
+                    vec_with_token(self.current_token())
+                } else {
+                    // Otherwise, treat it as per the "anything else" entry below.
+                    self.handle_end_tag_name(new_state)
+                }
+            },
+            x if is_upper_ascii(x) => {
+                // Append the lowercase version of the current input character (add 0x0020
+                // to the character’s code point) to the current tag token’s tag name.
+                self.append_char_to_tag_name(lowercase_char(x));
+
+                // Append the current input character to the temporary buffer.
+                self.tmp_buffer.push(x);
+                Vec::new()
+            },
+            x if is_lower_ascii(x) => {
+                // Append the current input character to the current tag token’s tag name.
+                self.append_char_to_tag_name(x);
+
+                // Append the current input character to the temporary buffer.
+                self.tmp_buffer.push(x);
+                Vec::new()
+            },
+            _ => {
+                self.handle_end_tag_name(new_state)
+            }
+        }
     }
 
     // fn consume_script_data_escape_start_slash_state(&mut self) -> Option<Token> {

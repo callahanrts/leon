@@ -12,3 +12,6 @@ mod plaintext_state_test;
 mod tag_open_state_test;
 mod end_tag_open_state_test;
 mod tag_name_state_test;
+mod rawtext_less_than_sign_state_test;
+mod rawtext_end_tag_open_state_test;
+mod rawtext_end_tag_name_state_test;
