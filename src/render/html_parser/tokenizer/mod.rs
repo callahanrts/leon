@@ -18,6 +18,15 @@ mod rcdata_end_tag_open_state;
 mod rcdata_less_than_sign_state;
 mod rcdata_state;
 
+mod script_data_end_tag_name_state;
+mod script_data_end_tag_open_state;
+mod script_data_escape_start_dash_state;
+mod script_data_escape_start_state;
+mod script_data_escaped_dash_dash_state;
+mod script_data_escaped_dash_state;
+mod script_data_escaped_state;
+mod script_data_escaped_less_than_sign_state;
+mod script_data_less_than_sign_state;
 mod script_data_state;
 
 mod tag_name_state;
@@ -112,9 +121,18 @@ enum State {
     RawtextEndTagOpenState,
     RawtextEndTagNameState,
 
-    ScriptDataState,
+    ScriptDataDoubleEscapeStartState,
+    ScriptDataEndTagNameState,
+    ScriptDataEndTagOpenState,
+    ScriptDataEscapeStartDashState,
+    ScriptDataEscapeStartState,
+    ScriptDataEscapedDashDashState,
+    ScriptDataEscapedDashState,
+    ScriptDataEscapedEndTagOpenState,
+    ScriptDataEscapedLessThanSignState,
+    ScriptDataEscapedState,
     ScriptDataLessThanSignState,
-    // ScriptDataEscapedDashDashState,
+    ScriptDataState,
     // ScriptDataEscapeStartSlashState,
 
     PlaintextState,
@@ -208,6 +226,23 @@ impl<'a> Tokenizer<'a> {
             State::RawtextLessThanSignState => self.consume_rawtext_less_than_sign_state(),
             State::RawtextEndTagOpenState => self.consume_rawtext_end_tag_open_state(),
             State::RawtextEndTagNameState => self.consume_rawtext_end_tag_name_state(),
+            State::ScriptDataLessThanSignState => self.consume_script_data_less_than_sign_state(),
+            State::ScriptDataEndTagOpenState => self.consume_script_data_end_tag_open_state(),
+            State::ScriptDataEndTagNameState => self.consume_script_data_end_tag_name_state(),
+            State::ScriptDataEscapeStartState => self.consume_script_data_escape_start_state(),
+            State::ScriptDataEscapeStartDashState => self.consume_script_data_escape_start_dash_state(),
+            State::ScriptDataEscapedState => self.consume_script_data_escaped_state(),
+            State::ScriptDataEscapedDashState => self.consume_script_data_escaped_dash_state(),
+            State::ScriptDataEscapedDashDashState => self.consume_script_data_escaped_dash_dash_state(),
+            State::ScriptDataEscapedLessThanSignState => self.consume_script_data_escaped_less_than_sign_state(),
+            // State::ScriptDataEscapedEndTagOpenState => self.consume_script_data_escaped_end_tag_open_state(),
+            // State::ScriptDataEscapedEndTagNameState => self.consume_script_data_escaped_end_tag_name_state(),
+            // State::ScriptDataDoubleEscapeStartState => self.consume_script_data_double_escape_start_state(),
+            // State::ScriptDataDoubleEscapedState => self.consume_script_data_double_escaped_state(),
+            // State::ScriptDataDoubleEscapedDashState => self.consume_script_data_double_escaped_dash_state(),
+            // State::ScriptDataDoubleEscapedDashDashState => self.consume_script_data_double_escaped_dash_dash_state(),
+            // State::ScriptDataDoubleEscapedLessThanSignState => self.consume_script_data_double_escaped_less_than_sign_state(),
+            // State::ScriptDataDoubleEscapeEndState => self.consume_script_data_double_escape_end_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
