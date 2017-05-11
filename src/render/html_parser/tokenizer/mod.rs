@@ -86,6 +86,10 @@ impl Tag {
         self.name.push(letter);
     }
 
+    pub fn append_attribute(&mut self, attr: Attribute) {
+        self.attributes.push(attr);
+    }
+
     pub fn name(&mut self) -> String {
         self.name.clone()
     }
@@ -107,6 +111,7 @@ struct Attribute {
 
 enum State {
     AfterAttrNameState,
+    AttrNameState,
     BeforeAttrNameState,
     BogusCommentState,
     CharReferenceState,
@@ -286,19 +291,23 @@ impl<'a> Tokenizer<'a> {
     // Helpers
     //
     fn append_char_to_tag_name(&mut self, letter: char) {
+        self.edit_current_tag(|tag| tag.append_name(letter));
+    }
+
+    fn edit_current_tag<F>(&mut self, f: F)
+        where F: Fn(&mut Tag) {
+
         match self.current_token() {
             Token::StartTagToken(mut tag) => {
-                tag.append_name(letter);
+                f(&mut tag);
                 self.current_token = Some(Token::StartTagToken(tag))
             },
             Token::EndTagToken(mut tag) => {
-                tag.append_name(letter);
+                f(&mut tag);
                 self.current_token = Some(Token::EndTagToken(tag))
-            }
-            _ => {
-                panic!("Unimplemented token");
-            }
-        };
+            },
+            _ => panic!("Unimplemented token")
+        }
     }
 
     // I fought the compiler a lot with this one and append_chart_to_tag_name.
