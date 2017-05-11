@@ -3,32 +3,37 @@
 mod test;
 
 // State modules
+mod before_attribute_name_state;
 mod data_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
 mod plaintext_state;
-
 mod rawtext_end_tag_name_state;
 mod rawtext_end_tag_open_state;
 mod rawtext_less_than_sign_state;
 mod rawtext_state;
-
 mod rcdata_end_tag_name_state;
 mod rcdata_end_tag_open_state;
 mod rcdata_less_than_sign_state;
 mod rcdata_state;
-
+mod script_data_double_escape_end_state;
+mod script_data_double_escape_start_state;
+mod script_data_double_escaped_dash_dash_state;
+mod script_data_double_escaped_dash_state;
+mod script_data_double_escaped_less_than_sign_state;
+mod script_data_double_escaped_state;
 mod script_data_end_tag_name_state;
 mod script_data_end_tag_open_state;
 mod script_data_escape_start_dash_state;
 mod script_data_escape_start_state;
 mod script_data_escaped_dash_dash_state;
 mod script_data_escaped_dash_state;
-mod script_data_escaped_state;
+mod script_data_escaped_end_tag_name_state;
+mod script_data_escaped_end_tag_open_state;
 mod script_data_escaped_less_than_sign_state;
+mod script_data_escaped_state;
 mod script_data_less_than_sign_state;
 mod script_data_state;
-
 mod tag_name_state;
 mod tag_open_state;
 
@@ -101,42 +106,43 @@ struct Attribute {
 }
 
 enum State {
-    DataState,
-    CharReferenceState,
-    TagOpenState,
-    EndTagOpenState,
-    TagNameState,
-    BogusCommentState,
+    AfterAttrNameState,
     BeforeAttrNameState,
-    SelfClosingStartTagState,
-
-    // RC States
-    RCDataState,
-    RCDataLessThanSignState,
-    RCDataEndTagOpenState,
+    BogusCommentState,
+    CharReferenceState,
+    DataState,
+    EndTagOpenState,
+    MarkupDeclarationOpenState,
+    PlaintextState,
     RCDataEndTagNameState,
-
-    RawtextState,
-    RawtextLessThanSignState,
-    RawtextEndTagOpenState,
+    RCDataEndTagOpenState,
+    RCDataLessThanSignState,
+    RCDataState,
     RawtextEndTagNameState,
-
+    RawtextEndTagOpenState,
+    RawtextLessThanSignState,
+    RawtextState,
+    ScriptDataDoubleEscapeEndState,
     ScriptDataDoubleEscapeStartState,
+    ScriptDataDoubleEscapedDashDashState,
+    ScriptDataDoubleEscapedDashState,
+    ScriptDataDoubleEscapedLessThanSignState,
+    ScriptDataDoubleEscapedState,
     ScriptDataEndTagNameState,
     ScriptDataEndTagOpenState,
     ScriptDataEscapeStartDashState,
     ScriptDataEscapeStartState,
     ScriptDataEscapedDashDashState,
     ScriptDataEscapedDashState,
+    ScriptDataEscapedEndTagNameState,
     ScriptDataEscapedEndTagOpenState,
     ScriptDataEscapedLessThanSignState,
     ScriptDataEscapedState,
     ScriptDataLessThanSignState,
     ScriptDataState,
-    // ScriptDataEscapeStartSlashState,
-
-    PlaintextState,
-    MarkupDeclarationOpenState,
+    SelfClosingStartTagState,
+    TagNameState,
+    TagOpenState,
 }
 
 struct Tokenizer<'a> {
@@ -235,14 +241,15 @@ impl<'a> Tokenizer<'a> {
             State::ScriptDataEscapedDashState => self.consume_script_data_escaped_dash_state(),
             State::ScriptDataEscapedDashDashState => self.consume_script_data_escaped_dash_dash_state(),
             State::ScriptDataEscapedLessThanSignState => self.consume_script_data_escaped_less_than_sign_state(),
-            // State::ScriptDataEscapedEndTagOpenState => self.consume_script_data_escaped_end_tag_open_state(),
-            // State::ScriptDataEscapedEndTagNameState => self.consume_script_data_escaped_end_tag_name_state(),
-            // State::ScriptDataDoubleEscapeStartState => self.consume_script_data_double_escape_start_state(),
-            // State::ScriptDataDoubleEscapedState => self.consume_script_data_double_escaped_state(),
-            // State::ScriptDataDoubleEscapedDashState => self.consume_script_data_double_escaped_dash_state(),
-            // State::ScriptDataDoubleEscapedDashDashState => self.consume_script_data_double_escaped_dash_dash_state(),
-            // State::ScriptDataDoubleEscapedLessThanSignState => self.consume_script_data_double_escaped_less_than_sign_state(),
-            // State::ScriptDataDoubleEscapeEndState => self.consume_script_data_double_escape_end_state(),
+            State::ScriptDataEscapedEndTagOpenState => self.consume_script_data_escaped_end_tag_open_state(),
+            State::ScriptDataEscapedEndTagNameState => self.consume_script_data_escaped_end_tag_name_state(),
+            State::ScriptDataDoubleEscapeStartState => self.consume_script_data_double_escape_start_state(),
+            State::ScriptDataDoubleEscapedState => self.consume_script_data_double_escaped_state(),
+            State::ScriptDataDoubleEscapedDashState => self.consume_script_data_double_escaped_dash_state(),
+            State::ScriptDataDoubleEscapedDashDashState => self.consume_script_data_double_escaped_dash_dash_state(),
+            State::ScriptDataDoubleEscapedLessThanSignState => self.consume_script_data_double_escaped_less_than_sign_state(),
+            State::ScriptDataDoubleEscapeEndState => self.consume_script_data_double_escape_end_state(),
+            State::BeforeAttrNameState => self.consume_before_attr_name_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
@@ -274,22 +281,6 @@ impl<'a> Tokenizer<'a> {
         self.state = new_state;
         return tokens;
     }
-
-
-    // fn consume_script_data_escape_start_slash_state(&mut self) -> Option<Token> {
-    //     let cur = self.consume_char();
-    //     match cur {
-    //         '-' | '\u{002D}' => {
-    //             self.state = State::ScriptDataEscapedDashDashState;
-    //             return Some(Token::CharToken('-'));
-    //         }
-    //         _ => {
-    //             self.reconsume_char();
-    //             self.state = State::ScriptDataState;
-    //         }
-    //     }
-    //     return None;
-    // }
 
     //
     // Helpers

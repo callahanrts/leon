@@ -1,6 +1,7 @@
 #[cfg(test)]
 use super::*;
 
+mod before_attribute_name_state_test;
 mod data_state_test;
 mod end_tag_open_state_test;
 mod plaintext_state_test;
@@ -12,12 +13,20 @@ mod rcdata_end_tag_name_state_test;
 mod rcdata_end_tag_open_state_test;
 mod rcdata_less_than_sign_state_test;
 mod rcdata_state_test;
+mod script_data_double_escape_end_state_test;
+mod script_data_double_escape_start_state_test;
+mod script_data_double_escaped_dash_dash_state_test;
+mod script_data_double_escaped_dash_state_test;
+mod script_data_double_escaped_less_than_sign_state_test;
+mod script_data_double_escaped_state_test;
 mod script_data_end_tag_name_state_test;
 mod script_data_end_tag_open_state_test;
 mod script_data_escape_start_dash_state_test;
 mod script_data_escape_start_state_test;
 mod script_data_escaped_dash_dash_state_test;
 mod script_data_escaped_dash_state_test;
+mod script_data_escaped_end_tag_name_state_test;
+mod script_data_escaped_end_tag_open_state_test;
 mod script_data_escaped_less_than_sign_state_test;
 mod script_data_escaped_state_test;
 mod script_data_less_than_sign_state_test;
