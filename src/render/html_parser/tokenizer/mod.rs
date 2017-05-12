@@ -3,7 +3,11 @@
 mod test;
 
 // State modules
+mod after_attribute_name_state;
+mod attribute_value_double_quoted_state;
+mod attribute_name_state;
 mod before_attribute_name_state;
+mod before_attribute_value_state;
 mod data_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
@@ -72,6 +76,7 @@ struct Tag {
     name: String,
     self_closing: bool,
     attributes: Vec<Attribute>,
+    current_index: usize,
 }
 
 impl Tag {
@@ -80,6 +85,7 @@ impl Tag {
             name: name,
             self_closing: false,
             attributes: Vec::new(),
+            current_index: 0,
         }
     }
     pub fn append_name(&mut self, letter: char) {
@@ -88,6 +94,15 @@ impl Tag {
 
     pub fn append_attribute(&mut self, attr: Attribute) {
         self.attributes.push(attr);
+        self.current_index = self.attributes.len() - 1;
+    }
+
+    pub fn append_attr_name(&mut self, letter: char) {
+        self.attributes[self.current_index].name.push(letter);
+    }
+
+    pub fn append_attr_value(&mut self, letter: char) {
+        self.attributes[self.current_index].value.push(letter);
     }
 
     pub fn name(&mut self) -> String {
@@ -111,8 +126,13 @@ struct Attribute {
 
 enum State {
     AfterAttrNameState,
+    AfterAttrValueQuotedState,
     AttrNameState,
+    AttrValueDoubleQuotedState,
+    AttrValueSingleQuotedState,
+    AttrValueUnquotedState,
     BeforeAttrNameState,
+    BeforeAttrValueState,
     BogusCommentState,
     CharReferenceState,
     DataState,
@@ -255,6 +275,9 @@ impl<'a> Tokenizer<'a> {
             State::ScriptDataDoubleEscapedLessThanSignState => self.consume_script_data_double_escaped_less_than_sign_state(),
             State::ScriptDataDoubleEscapeEndState => self.consume_script_data_double_escape_end_state(),
             State::BeforeAttrNameState => self.consume_before_attr_name_state(),
+            State::AttrNameState => self.consume_attr_name_state(),
+            State::AfterAttrNameState => self.consume_after_attr_name_state(),
+            State::BeforeAttrValueState => self.consume_before_attr_value_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()

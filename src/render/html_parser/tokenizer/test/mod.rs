@@ -1,7 +1,11 @@
 #[cfg(test)]
 use super::*;
 
+mod after_attribute_name_state_test;
+mod attribute_name_state_test;
+mod attribute_value_double_quoted_state_test;
 mod before_attribute_name_state_test;
+mod before_attribute_value_state_test;
 mod data_state_test;
 mod end_tag_open_state_test;
 mod plaintext_state_test;

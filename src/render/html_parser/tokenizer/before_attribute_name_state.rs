@@ -32,7 +32,7 @@ impl<'a> Tokenizer<'a> {
             _ => {
                 // Start a new attribute in the current tag token.
                 // Set that attribute’s name and value to the empty string.
-                self.edit_current_tag(|tag| tag.attributes.push(Attribute{
+                self.edit_current_tag(|tag| tag.append_attribute(Attribute{
                     name: String::new(),
                     value: String::new()
                 }));
