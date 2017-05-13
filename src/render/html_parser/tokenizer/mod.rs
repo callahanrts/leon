@@ -4,10 +4,14 @@ mod test;
 
 // State modules
 mod after_attribute_name_state;
-mod attribute_value_double_quoted_state;
+mod after_attribute_value_quoted_state;
 mod attribute_name_state;
+mod attribute_value_double_quoted_state;
+mod attribute_value_single_quoted_state;
+mod attribute_value_unquoted_state;
 mod before_attribute_name_state;
 mod before_attribute_value_state;
+mod bogus_comment_state;
 mod data_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
@@ -38,6 +42,7 @@ mod script_data_escaped_less_than_sign_state;
 mod script_data_escaped_state;
 mod script_data_less_than_sign_state;
 mod script_data_state;
+mod self_closing_start_tag_state;
 mod tag_name_state;
 mod tag_open_state;
 
@@ -103,6 +108,10 @@ impl Tag {
 
     pub fn append_attr_value(&mut self, letter: char) {
         self.attributes[self.current_index].value.push(letter);
+    }
+
+    pub fn set_self_closing(&mut self, self_closing: bool) {
+        self.self_closing = self_closing;
     }
 
     pub fn name(&mut self) -> String {
@@ -278,6 +287,12 @@ impl<'a> Tokenizer<'a> {
             State::AttrNameState => self.consume_attr_name_state(),
             State::AfterAttrNameState => self.consume_after_attr_name_state(),
             State::BeforeAttrValueState => self.consume_before_attr_value_state(),
+            State::AttrValueDoubleQuotedState => self.consume_attr_value_double_quoted_state(),
+            State::AttrValueSingleQuotedState => self.consume_attr_value_single_quoted_state(),
+            State::AttrValueUnquotedState => self.consume_attr_value_unquoted_state(),
+            State::AfterAttrValueQuotedState => self.consume_after_attr_value_quoted_state(),
+            State::SelfClosingStartTagState => self.consume_self_closing_start_tag_state(),
+            State::BogusCommentState => self.consume_bogus_comment_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
@@ -333,6 +348,16 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    fn append_to_comment_token(&mut self, letter: char) {
+        match self.current_token() {
+            Token::CommentToken(comment) => {
+                let new_comment = format!("{}{}", comment, letter);
+                self.current_token = Some(Token::CommentToken(new_comment))
+            },
+            _ => panic!("Token was not a comment token")
+        }
+    }
+
     // I fought the compiler a lot with this one and append_chart_to_tag_name.
     // It's likely I'm missing something
     // TODO: Come back to this function in the future and make it better.
@@ -345,6 +370,9 @@ impl<'a> Tokenizer<'a> {
                     },
                     Token::EndTagToken(ref mut tag) => {
                         return Token::EndTagToken(tag.clone());
+                    }
+                    Token::CommentToken(ref mut comment) => {
+                        return Token::CommentToken(comment.clone());
                     }
                     _ => panic!("Unimplemented token")
                 }

@@ -25,7 +25,6 @@ impl<'a> Tokenizer<'a> {
             '>' | '\u{003E}' => {
                 // Switch to the data state. Emit the current tag token.
                 self.state = State::DataState;
-                println!("GREATER THAN");
                 vec_with_token(self.current_token())
             },
             _ => {

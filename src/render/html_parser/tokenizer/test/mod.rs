@@ -2,10 +2,14 @@
 use super::*;
 
 mod after_attribute_name_state_test;
+mod after_attribute_value_quoted_state_test;
 mod attribute_name_state_test;
 mod attribute_value_double_quoted_state_test;
+mod attribute_value_single_quoted_state_test;
+mod attribute_value_unquoted_state_test;
 mod before_attribute_name_state_test;
 mod before_attribute_value_state_test;
+mod bogus_comment_state_test;
 mod data_state_test;
 mod end_tag_open_state_test;
 mod plaintext_state_test;
@@ -35,5 +39,6 @@ mod script_data_escaped_less_than_sign_state_test;
 mod script_data_escaped_state_test;
 mod script_data_less_than_sign_state_test;
 mod script_data_state_test;
+mod self_closing_start_tag_state_test;
 mod tag_name_state_test;
 mod tag_open_state_test;
