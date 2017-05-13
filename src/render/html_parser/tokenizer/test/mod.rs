@@ -12,6 +12,7 @@ mod before_attribute_value_state_test;
 mod bogus_comment_state_test;
 mod data_state_test;
 mod end_tag_open_state_test;
+mod markup_declaration_open_state_test;
 mod plaintext_state_test;
 mod rawtext_end_tag_name_state_test;
 mod rawtext_end_tag_open_state_test;

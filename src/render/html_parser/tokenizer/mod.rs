@@ -15,6 +15,7 @@ mod bogus_comment_state;
 mod data_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
+mod markup_declaration_open_state;
 mod plaintext_state;
 mod rawtext_end_tag_name_state;
 mod rawtext_end_tag_open_state;
@@ -143,8 +144,11 @@ enum State {
     BeforeAttrNameState,
     BeforeAttrValueState,
     BogusCommentState,
+    CDATASectionState,
     CharReferenceState,
+    CommentStartState,
     DataState,
+    DOCTYPEState,
     EndTagOpenState,
     MarkupDeclarationOpenState,
     PlaintextState,
@@ -218,8 +222,12 @@ impl<'a> Tokenizer<'a> {
     // Do the next characters start with the given string?
     // NOTE: Starts with compares as lower case
     fn starts_with(&self, s: &str) -> bool {
-        // return self.input[self.pos..].to_lowercase().starts_with(s);
         return self.input[self.pos..].starts_with(s);
+    }
+
+    fn starts_with_nocase(&self, s: &str) -> bool {
+        return self.input[self.pos..].to_lowercase().starts_with(s);
+        // return self.input[self.pos..].to_string().to_lowercase().starts_with(s.to_string().to_lowercase());
     }
 
     // Return true if all input is consumed
@@ -293,6 +301,7 @@ impl<'a> Tokenizer<'a> {
             State::AfterAttrValueQuotedState => self.consume_after_attr_value_quoted_state(),
             State::SelfClosingStartTagState => self.consume_self_closing_start_tag_state(),
             State::BogusCommentState => self.consume_bogus_comment_state(),
+            State::MarkupDeclarationOpenState => self.consume_markup_declaration_open_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
