@@ -64,7 +64,6 @@ fn greater_than() {
 //   Create a comment token with the empty string
 //   Switch to the bogus comment state (don't consume anything here)
 fn anything_else() {
-    println!("TEST WITH s");
     let mut t = Tokenizer::new("s");
     let tokens = t.consume_markup_declaration_open_state();
     assert_eq!(tokens.len(), 0);

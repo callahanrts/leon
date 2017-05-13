@@ -12,6 +12,10 @@ mod attribute_value_unquoted_state;
 mod before_attribute_name_state;
 mod before_attribute_value_state;
 mod bogus_comment_state;
+mod comment_less_than_sign_state;
+mod comment_start_dash_state;
+mod comment_start_state;
+mod comment_state;
 mod data_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
@@ -146,9 +150,15 @@ enum State {
     BogusCommentState,
     CDATASectionState,
     CharReferenceState,
+    CommentEndDashState,
+    CommentEndState,
+    CommentLessThanSignBangState,
+    CommentLessThanSignState,
+    CommentStartDashState,
     CommentStartState,
-    DataState,
+    CommentState,
     DOCTYPEState,
+    DataState,
     EndTagOpenState,
     MarkupDeclarationOpenState,
     PlaintextState,
@@ -302,6 +312,10 @@ impl<'a> Tokenizer<'a> {
             State::SelfClosingStartTagState => self.consume_self_closing_start_tag_state(),
             State::BogusCommentState => self.consume_bogus_comment_state(),
             State::MarkupDeclarationOpenState => self.consume_markup_declaration_open_state(),
+            State::CommentStartState => self.consume_comment_start_state(),
+            State::CommentStartDashState => self.consume_comment_start_dash_state(),
+            State::CommentState => self.consume_comment_state(),
+            State::CommentLessThanSignState => self.consume_comment_less_than_sign_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
