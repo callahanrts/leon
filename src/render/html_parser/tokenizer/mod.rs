@@ -12,6 +12,12 @@ mod attribute_value_unquoted_state;
 mod before_attribute_name_state;
 mod before_attribute_value_state;
 mod bogus_comment_state;
+mod comment_end_bang_state;
+mod comment_end_dash_state;
+mod comment_end_state;
+mod comment_less_than_sign_bang_dash_dash_state;
+mod comment_less_than_sign_bang_dash_state;
+mod comment_less_than_sign_bang_state;
 mod comment_less_than_sign_state;
 mod comment_start_dash_state;
 mod comment_start_state;
@@ -150,8 +156,11 @@ enum State {
     BogusCommentState,
     CDATASectionState,
     CharReferenceState,
+    CommentEndBangState,
     CommentEndDashState,
     CommentEndState,
+    CommentLessThanSignBangDashDashState,
+    CommentLessThanSignBangDashState,
     CommentLessThanSignBangState,
     CommentLessThanSignState,
     CommentStartDashState,
@@ -316,6 +325,12 @@ impl<'a> Tokenizer<'a> {
             State::CommentStartDashState => self.consume_comment_start_dash_state(),
             State::CommentState => self.consume_comment_state(),
             State::CommentLessThanSignState => self.consume_comment_less_than_sign_state(),
+            State::CommentLessThanSignBangState => self.consume_comment_less_than_sign_bang_state(),
+            State::CommentLessThanSignBangDashState => self.consume_comment_less_than_sign_bang_dash_state(),
+            State::CommentLessThanSignBangDashDashState => self.consume_comment_less_than_sign_bang_dash_dash_state(),
+            State::CommentEndDashState => self.consume_comment_end_dash_state(),
+            State::CommentEndState => self.consume_comment_end_state(),
+            State::CommentEndBangState => self.consume_comment_end_bang_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
