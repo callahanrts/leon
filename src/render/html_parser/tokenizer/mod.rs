@@ -11,6 +11,12 @@ mod attribute_value_single_quoted_state;
 mod attribute_value_unquoted_state;
 mod before_attribute_name_state;
 mod before_attribute_value_state;
+mod before_doctype_public_identifier_state;
+mod doctype_public_identifier_double_quoted_state;
+mod after_doctype_name_state;
+mod after_doctype_public_keyword_state;
+mod before_doctype_name_state;
+mod doctype_name_state;
 mod bogus_comment_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
@@ -23,6 +29,7 @@ mod comment_start_dash_state;
 mod comment_start_state;
 mod comment_state;
 mod data_state;
+mod doctype_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
 mod markup_declaration_open_state;
@@ -71,8 +78,8 @@ enum Token {
 #[derive(Clone)]
 struct DoctypeData {
     name: String,
-    public_identifier: String,
-    system_identifier: String,
+    public_identifier: Option<String>,
+    system_identifier: Option<String>,
     force_quirks: bool,
 }
 
@@ -80,9 +87,16 @@ impl DoctypeData {
     pub fn new(name: String) -> DoctypeData {
         DoctypeData{
             name: name,
-            public_identifier: String::from(""),
-            system_identifier: String::from(""),
+            public_identifier: None,
+            system_identifier: None,
             force_quirks: false,
+        }
+    }
+
+    pub fn append_public_identifier(&mut self, c: char) {
+        self.public_identifier = match self.public_identifier {
+            Some(ref mut id) => Some(format!("{}{}", id, c)),
+            None => None
         }
     }
 }
@@ -153,6 +167,7 @@ enum State {
     AttrValueUnquotedState,
     BeforeAttrNameState,
     BeforeAttrValueState,
+    BeforeDOCTYPENameState,
     BogusCommentState,
     CDATASectionState,
     CharReferenceState,
@@ -161,16 +176,24 @@ enum State {
     CommentEndState,
     CommentLessThanSignBangDashDashState,
     CommentLessThanSignBangDashState,
+    DOCTYPEPublicIdentifierSingleQuotedState,
     CommentLessThanSignBangState,
     CommentLessThanSignState,
     CommentStartDashState,
     CommentStartState,
     CommentState,
+    DOCTYPENameState,
+    BeforeDOCTYPEPublicIdentifierState,
+    DOCTYPEPublicIdentifierDoubleQuotedState,
+    AfterDOCTYPENameState,
     DOCTYPEState,
     DataState,
     EndTagOpenState,
     MarkupDeclarationOpenState,
     PlaintextState,
+    BogusDOCTYPEState,
+    DOCTYPESystemKeywordState,
+    DOCTYPEPublicKeywordState,
     RCDataEndTagNameState,
     RCDataEndTagOpenState,
     RCDataLessThanSignState,
@@ -187,11 +210,13 @@ enum State {
     ScriptDataDoubleEscapedState,
     ScriptDataEndTagNameState,
     ScriptDataEndTagOpenState,
+    AfterDOCTYPEPublicIdentifierState,
     ScriptDataEscapeStartDashState,
     ScriptDataEscapeStartState,
     ScriptDataEscapedDashDashState,
     ScriptDataEscapedDashState,
     ScriptDataEscapedEndTagNameState,
+    AfterDOCTYPEPublicKeywordState,
     ScriptDataEscapedEndTagOpenState,
     ScriptDataEscapedLessThanSignState,
     ScriptDataEscapedState,
@@ -331,6 +356,12 @@ impl<'a> Tokenizer<'a> {
             State::CommentEndDashState => self.consume_comment_end_dash_state(),
             State::CommentEndState => self.consume_comment_end_state(),
             State::CommentEndBangState => self.consume_comment_end_bang_state(),
+            State::DOCTYPEState => self.consume_doctype_state(),
+            State::BeforeDOCTYPENameState => self.consume_before_doctype_name_state(),
+            State::DOCTYPENameState => self.consume_doctype_name_state(),
+            State::AfterDOCTYPENameState => self.consume_after_doctype_name_state(),
+            State::AfterDOCTYPEPublicKeywordState => self.consume_after_doctype_public_keyword_state(),
+            State::BeforeDOCTYPEPublicIdentifierState => self.consume_before_doctype_public_identifier_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
@@ -396,6 +427,19 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    fn edit_doctype_token<F>(&mut self, f: F)
+        where F: Fn(&mut DoctypeData) {
+
+        match self.current_token() {
+            Token::DoctypeToken(mut data) => {
+                f(&mut data);
+                self.current_token = Some(Token::DoctypeToken(data))
+            },
+            _ => panic!("Unimplemented token")
+        }
+    }
+
+
     // I fought the compiler a lot with this one and append_chart_to_tag_name.
     // It's likely I'm missing something
     // TODO: Come back to this function in the future and make it better.
@@ -411,6 +455,9 @@ impl<'a> Tokenizer<'a> {
                     }
                     Token::CommentToken(ref mut comment) => {
                         return Token::CommentToken(comment.clone());
+                    }
+                    Token::DoctypeToken(ref mut data) => {
+                        return Token::DoctypeToken(data.clone());
                     }
                     _ => panic!("Unimplemented token")
                 }
