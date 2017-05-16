@@ -5,18 +5,17 @@ mod test;
 // State modules
 mod after_attribute_name_state;
 mod after_attribute_value_quoted_state;
+mod after_doctype_name_state;
+mod after_doctype_public_identifier_state;
+mod after_doctype_public_keyword_state;
 mod attribute_name_state;
 mod attribute_value_double_quoted_state;
 mod attribute_value_single_quoted_state;
 mod attribute_value_unquoted_state;
 mod before_attribute_name_state;
 mod before_attribute_value_state;
-mod before_doctype_public_identifier_state;
-mod doctype_public_identifier_double_quoted_state;
-mod after_doctype_name_state;
-mod after_doctype_public_keyword_state;
 mod before_doctype_name_state;
-mod doctype_name_state;
+mod before_doctype_public_identifier_state;
 mod bogus_comment_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
@@ -29,6 +28,9 @@ mod comment_start_dash_state;
 mod comment_start_state;
 mod comment_state;
 mod data_state;
+mod doctype_name_state;
+mod doctype_public_identifier_double_quoted_state;
+mod doctype_public_identifier_single_quoted_state;
 mod doctype_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
@@ -161,6 +163,9 @@ struct Attribute {
 enum State {
     AfterAttrNameState,
     AfterAttrValueQuotedState,
+    AfterDOCTYPENameState,
+    AfterDOCTYPEPublicIdentifierState,
+    AfterDOCTYPEPublicKeywordState,
     AttrNameState,
     AttrValueDoubleQuotedState,
     AttrValueSingleQuotedState,
@@ -168,7 +173,10 @@ enum State {
     BeforeAttrNameState,
     BeforeAttrValueState,
     BeforeDOCTYPENameState,
+    BeforeDOCTYPEPublicIdentifierState,
+    BetweenDOCTYPEPublicAndSystemIdentifiersState,
     BogusCommentState,
+    BogusDOCTYPEState,
     CDATASectionState,
     CharReferenceState,
     CommentEndBangState,
@@ -176,24 +184,23 @@ enum State {
     CommentEndState,
     CommentLessThanSignBangDashDashState,
     CommentLessThanSignBangDashState,
-    DOCTYPEPublicIdentifierSingleQuotedState,
     CommentLessThanSignBangState,
     CommentLessThanSignState,
     CommentStartDashState,
     CommentStartState,
     CommentState,
     DOCTYPENameState,
-    BeforeDOCTYPEPublicIdentifierState,
     DOCTYPEPublicIdentifierDoubleQuotedState,
-    AfterDOCTYPENameState,
+    DOCTYPEPublicIdentifierSingleQuotedState,
+    DOCTYPEPublicKeywordState,
     DOCTYPEState,
+    DOCTYPESystemIdentifierDoubleQuotedState,
+    DOCTYPESystemIdentifierSingleQuotedState,
+    DOCTYPESystemKeywordState,
     DataState,
     EndTagOpenState,
     MarkupDeclarationOpenState,
     PlaintextState,
-    BogusDOCTYPEState,
-    DOCTYPESystemKeywordState,
-    DOCTYPEPublicKeywordState,
     RCDataEndTagNameState,
     RCDataEndTagOpenState,
     RCDataLessThanSignState,
@@ -210,13 +217,11 @@ enum State {
     ScriptDataDoubleEscapedState,
     ScriptDataEndTagNameState,
     ScriptDataEndTagOpenState,
-    AfterDOCTYPEPublicIdentifierState,
     ScriptDataEscapeStartDashState,
     ScriptDataEscapeStartState,
     ScriptDataEscapedDashDashState,
     ScriptDataEscapedDashState,
     ScriptDataEscapedEndTagNameState,
-    AfterDOCTYPEPublicKeywordState,
     ScriptDataEscapedEndTagOpenState,
     ScriptDataEscapedLessThanSignState,
     ScriptDataEscapedState,
@@ -362,6 +367,9 @@ impl<'a> Tokenizer<'a> {
             State::AfterDOCTYPENameState => self.consume_after_doctype_name_state(),
             State::AfterDOCTYPEPublicKeywordState => self.consume_after_doctype_public_keyword_state(),
             State::BeforeDOCTYPEPublicIdentifierState => self.consume_before_doctype_public_identifier_state(),
+            State::DOCTYPEPublicIdentifierDoubleQuotedState => self.consume_doctype_public_identifier_double_quoted_state(),
+            State::DOCTYPEPublicIdentifierSingleQuotedState => self.consume_doctype_public_identifier_single_quoted_state(),
+            State::AfterDOCTYPEPublicIdentifierState => self.consume_after_doctype_public_identifier_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
