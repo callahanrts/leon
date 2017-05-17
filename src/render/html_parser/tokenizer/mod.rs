@@ -16,6 +16,7 @@ mod before_attribute_name_state;
 mod before_attribute_value_state;
 mod before_doctype_name_state;
 mod before_doctype_public_identifier_state;
+mod between_doctype_public_and_system_identifiers_state;
 mod bogus_comment_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
@@ -370,6 +371,7 @@ impl<'a> Tokenizer<'a> {
             State::DOCTYPEPublicIdentifierDoubleQuotedState => self.consume_doctype_public_identifier_double_quoted_state(),
             State::DOCTYPEPublicIdentifierSingleQuotedState => self.consume_doctype_public_identifier_single_quoted_state(),
             State::AfterDOCTYPEPublicIdentifierState => self.consume_after_doctype_public_identifier_state(),
+            State::BetweenDOCTYPEPublicAndSystemIdentifiersState => self.consume_between_doctype_public_and_system_identifiers_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()

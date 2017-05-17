@@ -14,6 +14,7 @@ mod before_attribute_name_state_test;
 mod before_attribute_value_state_test;
 mod before_doctype_name_state_test;
 mod before_doctype_public_identifier_state_test;
+mod between_doctype_public_and_system_identifiers_state_test;
 mod bogus_comment_state_test;
 mod comment_end_bang_state_test;
 mod comment_end_dash_state_test;
