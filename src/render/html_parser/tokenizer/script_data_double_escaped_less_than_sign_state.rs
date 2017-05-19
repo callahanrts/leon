@@ -10,7 +10,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Set the temporary buffer to the empty string.
 				self.tmp_buffer = String::new();
 

@@ -43,7 +43,7 @@ fn greater_than() {
     t.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
 
     match *t.consume_after_attr_name_state().first().unwrap() {
-        Token::StartTagToken(ref tag) => assert!(true),
+        Token::StartTagToken(_) => assert!(true),
         _ => assert!(false)
     };
 

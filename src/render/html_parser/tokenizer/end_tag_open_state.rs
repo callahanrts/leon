@@ -28,7 +28,7 @@ impl<'a> Tokenizer<'a> {
                 self.current_token = Some(Token::EndTagToken(Tag::new(String::new())));
                 return Vec::new();
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // TODO: Parse error.
                 // Switch to the data state.
                 self.state = State::DataState;

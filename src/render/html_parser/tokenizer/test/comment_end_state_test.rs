@@ -34,7 +34,7 @@ fn greater_than() {
     let mut t = Tokenizer::new(">");
     t.current_token = Some(Token::CommentToken(String::from("test")));
     match *t.consume_comment_end_state().first().unwrap() {
-        Token::CommentToken(ref comment) => assert!(true),
+        Token::CommentToken(_) => assert!(true),
         _ => assert!(false)
     }
 

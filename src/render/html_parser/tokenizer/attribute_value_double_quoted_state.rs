@@ -8,12 +8,12 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '"' | '\u{0022}' => {
+            '"' => {
                 // Switch to the after attribute value (quoted) state.
                 self.state = State::AfterAttrValueQuotedState;
                 Vec::new()
             },
-            '&' | '\u{0026}' => {
+            '&' => {
                 // Set the return state to the attribute value (double-quoted) state.
                 self.return_state = State::AttrValueDoubleQuotedState;
 

@@ -9,7 +9,7 @@ impl<'a> Tokenizer<'a> {
 
         let cur = self.consume_char();
         match cur {
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Set the self-closing flag of the current tag token.
                 self.edit_current_tag(|tag| tag.set_self_closing(true));
 
@@ -19,7 +19,7 @@ impl<'a> Tokenizer<'a> {
                 // Emit the current tag token.
                 vec_with_token(self.current_token())
             },
-            x => {
+            _ => {
                 // Parse error. Reconsume in the before attribute name state.
                 self.reconsume_char();
                 self.state = State::BeforeAttrNameState;

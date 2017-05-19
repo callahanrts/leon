@@ -13,7 +13,7 @@ impl<'a> Tokenizer<'a> {
 
         let cur = self.consume_char();
         match cur {
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 

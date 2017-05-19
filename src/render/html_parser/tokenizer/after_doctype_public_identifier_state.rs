@@ -17,12 +17,12 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Switch to the between DOCTYPE public and system identifiers state.
                 self.state = State::BetweenDOCTYPEPublicAndSystemIdentifiersState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 
@@ -30,7 +30,7 @@ impl<'a> Tokenizer<'a> {
                 vec_with_token(self.current_token())
             },
 
-            '"' | '\u{0022}' => {
+            '"' => {
                 // Parse error.
                 // Set the DOCTYPE token’s system identifier to the empty string (not missing),
                 self.edit_doctype_token(|data| data.system_identifier = Some(String::new()));
@@ -39,7 +39,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::DOCTYPESystemIdentifierDoubleQuotedState;
                 Vec::new()
             },
-            '\'' | '\u{0027}' => {
+            '\'' => {
                 // Parse error.
                 // Set the DOCTYPE token’s system identifier to the empty string (not missing),
                 self.edit_doctype_token(|data| data.system_identifier = Some(String::new()));

@@ -20,7 +20,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Ignore the character
                 Vec::new()
             },
@@ -46,7 +46,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::DOCTYPENameState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Parse error.
                 // Create a new DOCTYPE token.
                 let mut data = DoctypeData::new(String::new());

@@ -9,24 +9,24 @@ impl<'a> Tokenizer<'a> {
 
         let cur = self.consume_char();
         match cur {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Switch to the before attribute name state.
                 self.state = State::BeforeAttrNameState;
                 Vec::new()
             },
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Switch to the self-closing start tag state.
                 self.state = State::SelfClosingStartTagState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 
                 // Emit the current tag token.
                 vec_with_token(self.current_token())
             },
-            x => {
+            _ => {
                 // Parse error. Reconsume in the before attribute name state.
                 self.reconsume_char();
                 self.state = State::BeforeAttrNameState;

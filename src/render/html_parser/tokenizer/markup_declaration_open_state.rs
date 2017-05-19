@@ -21,7 +21,7 @@ impl<'a> Tokenizer<'a> {
         // for the word "DOCTYPE",
         else if self.starts_with_nocase("doctype") {
             // then consume those characters
-            for x in 0..7 {
+            for _ in 0..7 {
                 self.consume_char();
             }
 

@@ -5,7 +5,7 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_rcdata_less_than_sign_state(&mut self) -> Vec<Token> {
         let cur = self.consume_char();
         match cur {
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Set the temporary buffer to the empty string.
                 // Switch to the RCDATA end tag open state.
                 self.state = State::RCDataEndTagOpenState;

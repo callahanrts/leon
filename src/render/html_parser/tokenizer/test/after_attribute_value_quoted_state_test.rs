@@ -35,7 +35,7 @@ fn greater_than() {
     let mut t = Tokenizer::new(">");
     t.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
     match *t.consume_after_attr_value_quoted_state().first().unwrap() {
-        Token::StartTagToken(ref tag) => assert!(true),
+        Token::StartTagToken(_) => assert!(true),
         _ => assert!(false)
     }
 

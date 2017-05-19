@@ -10,14 +10,14 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '-' | '\u{002D}' => {
+            '-' => {
                 // Switch to the script data escaped dash dash state.
                 self.state = State::ScriptDataEscapedDashDashState;
 
                 // Emit a U+002D HYPHEN-MINUS character token.
                 vec_with_token(Token::CharToken('-'))
             },
-            '<' | '\u{003C}' => {
+            '<' => {
                 // Switch to the script data escaped less-than sign state.
                 self.state = State::ScriptDataEscapedLessThanSignState;
                 Vec::new()

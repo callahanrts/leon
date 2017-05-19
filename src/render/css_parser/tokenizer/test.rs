@@ -5,7 +5,7 @@ use super::*;
 #[test]
 // Look ahead to the next character without consuming it
 fn test_next_char() {
-    let mut s = Tokenizer::new("Hello");
+    let s = Tokenizer::new("Hello");
     assert_eq!(s.next_char(), 'H');
     assert_eq!(s.next_char(), 'H');
 }
@@ -20,7 +20,7 @@ fn test_nth_char() {
 
 #[test]
 fn starts_with() {
-    let mut s = Tokenizer::new("Hello");
+    let s = Tokenizer::new("Hello");
     assert!(s.starts_with("He"));
     assert!(!s.starts_with("lo"));
 }
@@ -171,7 +171,7 @@ fn assert_consume_number(input: &str, val: f32, tpe: &str) {
 fn test_consume_number_token() {
     let mut s = Tokenizer::new("+123;");
     match s.consume_number_token() {
-        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, 123.0),
+        Token::NumberToken{value: v, num_type: _} => assert_eq!(v, 123.0),
         _ => assert!(false),
     }
 
@@ -183,7 +183,7 @@ fn test_consume_number_token() {
 
     let mut s = Tokenizer::new("23px");
     match s.consume_number_token() {
-        Token::DimensionToken{value: v, num_type: n, unit: u} => {
+        Token::DimensionToken{value: v, num_type: _, unit: u} => {
             assert_eq!(v, 23.0);
             assert_eq!(u, "px");
         }
@@ -215,7 +215,7 @@ fn test_consume_minus() {
 
     let mut s = Tokenizer::new("-23 ");
     match s.consume_minus() {
-        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, -23.0),
+        Token::NumberToken{value: v, num_type: _} => assert_eq!(v, -23.0),
         _ => assert!(false),
     }
 
@@ -232,14 +232,14 @@ fn test_consume_minus() {
     }
 }
 
-fn test_consume_ident() {
-}
+// fn test_consume_ident() {
+// }
 
 #[test]
 fn test_consume_url_token() {
     let mut s = Tokenizer::new("  http://www.url.com/);");
     match s.consume_url_token() {
-        Token::UrlToken(u) => assert!(true),
+        Token::UrlToken(_) => assert!(true),
         _ => assert!(false),
     }
     assert_eq!(s.next_char(), ';');
@@ -268,7 +268,7 @@ fn test_consume_bad_url_remnants() {
 fn test_consume_full_stop() {
     let mut s = Tokenizer::new(".23;");
     match s.consume_full_stop()  {
-        Token::NumberToken{value: v, num_type: n} => assert_eq!(v, 0.23),
+        Token::NumberToken{value: v, num_type: _} => assert_eq!(v, 0.23),
         _ => assert!(false),
     }
 
@@ -294,8 +294,8 @@ fn test_consume_less_than() {
     }
 }
 
-fn test_consume_token() {
-}
+// fn test_consume_token() {
+// }
 
 //
 // Helpers
@@ -337,10 +337,10 @@ fn test_would_be_identifier() {
     s.consume_char(); // Consume #
     assert!(!would_be_identifier(&s));
 
-    let mut s = Tokenizer::new("#_abc");
+    let s = Tokenizer::new("#_abc");
     assert!(!would_be_identifier(&s));
 
-    let mut s = Tokenizer::new("#-abc");
+    let s = Tokenizer::new("#-abc");
     assert!(!would_be_identifier(&s));
 }
 
@@ -354,22 +354,22 @@ fn test_is_number(){
 #[test]
 // https://drafts.csswg.org/css-syntax/#starts-with-a-number
 fn test_start_of_number() {
-    let mut s = Tokenizer::new("0");
+    let s = Tokenizer::new("0");
     assert!(start_of_number(&s));
 
-    let mut s = Tokenizer::new(".01");
+    let s = Tokenizer::new(".01");
     assert!(start_of_number(&s));
 
-    let mut s = Tokenizer::new("+1");
+    let s = Tokenizer::new("+1");
     assert!(start_of_number(&s));
 
-    let mut s = Tokenizer::new("-1");
+    let s = Tokenizer::new("-1");
     assert!(start_of_number(&s));
 
-    let mut s = Tokenizer::new("-1e+3");
+    let s = Tokenizer::new("-1e+3");
     assert!(start_of_number(&s));
 
-    let mut s = Tokenizer::new("1e-3");
+    let s = Tokenizer::new("1e-3");
     assert!(start_of_number(&s));
 }
 

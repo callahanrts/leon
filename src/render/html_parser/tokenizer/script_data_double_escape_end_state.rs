@@ -5,7 +5,7 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_script_data_double_escape_end_state(&mut self) -> Vec<Token> {
         let cur = self.consume_char();
         match cur {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' | '/' | '\u{002F}' | '>' | '\u{003E}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' | '/' | '>' => {
                 // If the temporary buffer is the string "script",
                 if self.tmp_buffer == String::from("script") {
                     // then switch to the script data escaped state.

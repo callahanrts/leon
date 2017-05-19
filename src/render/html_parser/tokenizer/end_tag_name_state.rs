@@ -4,7 +4,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_end_tag_name_state(&mut self, new_state: State) -> Vec<Token> {
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // If the current end tag token is an appropriate end tag token,
                 if self.is_appropriate_end_tag_token() {
                     // then switch to the before attribute name state.
@@ -15,7 +15,7 @@ impl<'a> Tokenizer<'a> {
                     self.handle_end_tag_name(new_state)
                 }
             },
-            '/' | '\u{002f}' => {
+            '/' => {
                 // If the current end tag token is an appropriate end tag token,
                 if self.is_appropriate_end_tag_token() {
                     // then switch to the self-closing start tag state.
@@ -26,7 +26,7 @@ impl<'a> Tokenizer<'a> {
                     self.handle_end_tag_name(new_state)
                 }
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // If the current end tag token is an appropriate end tag token,
                 if self.is_appropriate_end_tag_token() {
                     // then switch to the data state and emit the current tag token.

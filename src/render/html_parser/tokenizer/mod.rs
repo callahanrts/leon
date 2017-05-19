@@ -69,7 +69,7 @@ mod tag_open_state;
 
 #[derive(Clone)]
 enum Token {
-    Empty,
+    // Empty, // NOTE: Not used
     DoctypeToken(DoctypeData),
     StartTagToken(Tag),
     EndTagToken(Tag),
@@ -142,17 +142,20 @@ impl Tag {
         self.self_closing = self_closing;
     }
 
-    pub fn name(&mut self) -> String {
-        self.name.clone()
-    }
+    // NOTE: Not used
+    // pub fn name(&mut self) -> String {
+    //     self.name.clone()
+    // }
 
-    pub fn self_closing(&mut self) -> bool {
-        self.self_closing.clone()
-    }
+    // NOTE: Not used
+    // pub fn self_closing(&mut self) -> bool {
+    //     self.self_closing.clone()
+    // }
 
-    pub fn attributes(&mut self) -> Vec<Attribute> {
-        self.attributes.clone()
-    }
+    // NOTE: Not used
+    // pub fn attributes(&mut self) -> Vec<Attribute> {
+    //     self.attributes.clone()
+    // }
 }
 
 #[derive(Clone)]
@@ -265,9 +268,10 @@ impl<'a> Tokenizer<'a> {
         return self.input[self.pos..].chars().next().unwrap();
     }
 
-    fn nth_char(&self, offset: usize) -> char{
-        return self.input[(self.pos + offset - 1)..].chars().next().unwrap();
-    }
+    // NOTE: Never used
+    // fn nth_char(&self, offset: usize) -> char{
+    //     return self.input[(self.pos + offset - 1)..].chars().next().unwrap();
+    // }
 
     // Do the next characters start with the given string?
     // NOTE: Starts with compares as lower case
@@ -298,14 +302,15 @@ impl<'a> Tokenizer<'a> {
         self.pos -= 1;
     }
 
+    // NOTE: Never used
     // Consume characters until test returns false
-    fn consume_while<F>(&mut self, test: F) -> String where F: Fn(char) -> bool {
-        let mut result = String::new();
-        while !self.eof() && test(self.next_char()) {
-            result.push(self.consume_char());
-        }
-        return result;
-    }
+    // fn consume_while<F>(&mut self, test: F) -> String where F: Fn(char) -> bool {
+    //     let mut result = String::new();
+    //     while !self.eof() && test(self.next_char()) {
+    //         result.push(self.consume_char());
+    //     }
+    //     return result;
+    // }
 
     pub fn consume_token(&mut self) -> Vec<Token> {
         // Some states can emit more than one token
@@ -505,14 +510,14 @@ impl<'a> Tokenizer<'a> {
 
 fn is_upper_ascii(c: char) -> bool {
     match c {
-        'A' ... 'Z' | '\u{0041}' ... '\u{005A}' => true,
+        'A' ... 'Z' => true,
         _ => false,
     }
 }
 
 fn is_lower_ascii(c: char) -> bool {
     match c {
-        'a' ... 'z' | '\u{0061}' ... '\u{007A}' => true,
+        'a' ... 'z'  => true,
         _ => false
     }
 }

@@ -10,14 +10,14 @@ impl<'a> Tokenizer<'a> {
 
         // Consume the next input Char
         match self.consume_char() {
-            '&' | '\u{0026}' => {
+            '&' => {
                 // Set the return state to the data state
                 self.return_state = State::DataState;
                 // Switch to the character reference state
                 self.state = State::CharReferenceState;
                 return Vec::new();
             }
-            '<' | '\u{003C}' => {
+            '<' => {
                 // Switch to the tag open state. We're reading an open tag
                 self.state = State::TagOpenState;
                 return Vec::new();

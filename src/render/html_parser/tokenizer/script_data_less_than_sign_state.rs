@@ -4,7 +4,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_script_data_less_than_sign_state(&mut self) -> Vec<Token> {
         match self.consume_char() {
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Set the temporary buffer to the empty string.
                 self.tmp_buffer = String::new();
 
@@ -12,7 +12,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::ScriptDataEndTagOpenState;
                 Vec::new()
             },
-            '!' | '\u{0021}' => {
+            '!' => {
                 // Switch to the script data escape start state.
                 self.state = State::ScriptDataEscapeStartState;
 

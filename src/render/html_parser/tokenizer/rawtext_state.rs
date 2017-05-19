@@ -10,7 +10,7 @@ impl<'a> Tokenizer<'a> {
 
         // Consume the next input Char
         match self.consume_char() {
-            '<' | '\u{003C}' => {
+            '<' => {
                 // Switch to RawtextLessThanSignState
                 self.state = State::RawtextLessThanSignState;
                 return Vec::new();

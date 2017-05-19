@@ -20,7 +20,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Switch to the before DOCTYPE name state.
                 self.state = State::BeforeDOCTYPENameState;
                 Vec::new()

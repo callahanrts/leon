@@ -8,21 +8,21 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Ignore the character
                 Vec::new()
             },
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Switch to the self-closing start tag state.
                 self.state = State::SelfClosingStartTagState;
                 Vec::new()
             },
-            '=' | '\u{003D}' => {
+            '=' => {
                 // Switch to the before attribute value state.
                 self.state = State::BeforeAttrValueState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state. Emit the current tag token.
                 self.state = State::DataState;
                 vec_with_token(self.current_token())

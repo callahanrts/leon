@@ -25,7 +25,7 @@ fn greater_than() {
     t.current_token = Some(Token::CommentToken(String::from("test")));
 
     match *t.consume_comment_start_state().first().unwrap() {
-        Token::CommentToken(ref comment) => assert!(true),
+        Token::CommentToken(_) => assert!(true),
         _ => assert!(false)
     }
 

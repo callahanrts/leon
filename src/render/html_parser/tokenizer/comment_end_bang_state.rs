@@ -11,7 +11,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '-' | '\u{0021}' => {
+            '-' => {
                 // Append two U+002D HYPHEN-MINUS characters (-) and a U+0021
                 // EXCLAMATION MARK character (!) to the comment token’s data.
                 self.append_to_comment_token('-');
@@ -22,7 +22,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::CommentEndDashState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Parse error.
                 // Switch to the data state.
                 self.state = State::DataState;

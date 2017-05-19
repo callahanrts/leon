@@ -17,12 +17,12 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Switch to the before DOCTYPE public identifier state.
                 self.state = State::BeforeDOCTYPEPublicIdentifierState;
                 Vec::new()
             },
-            '"' | '\u{0022}' => {
+            '"' => {
                 // Parse error.
                 // Set the DOCTYPE token’s public identifier to the empty string (not missing),
                 self.edit_doctype_token(|data| data.public_identifier = Some(String::new()));
@@ -31,7 +31,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::DOCTYPEPublicIdentifierDoubleQuotedState;
                 Vec::new()
             },
-            '\'' | '\u{0027}' => {
+            '\'' => {
                 // Parse error.
                 // Set the DOCTYPE token’s public identifier to the empty string (not missing),
                 self.edit_doctype_token(|data| data.public_identifier = Some(String::new()));
@@ -40,7 +40,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::DOCTYPEPublicIdentifierSingleQuotedState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Parse error.
                 // Set the DOCTYPE token’s force-quirks flag to on.
                 self.edit_doctype_token(|data| data.force_quirks = true);

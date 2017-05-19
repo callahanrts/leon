@@ -41,7 +41,7 @@ fn greater_than() {
     let mut t = Tokenizer::new(">");
     t.current_token = Some(Token::DoctypeToken(DoctypeData::new(String::new())));
     match *t.consume_after_doctype_name_state().first().unwrap() {
-        Token::DoctypeToken(ref data) => assert!(true),
+        Token::DoctypeToken(_) => assert!(true),
         _ => assert!(false)
     }
 

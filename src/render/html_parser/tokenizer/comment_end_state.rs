@@ -11,19 +11,19 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 
                 // Emit the comment token.
                 vec_with_token(self.current_token())
             },
-            '!' | '\u{0021}' => {
+            '!' => {
                 // Switch to the comment end bang state.
                 self.state = State::CommentEndBangState;
                 Vec::new()
             },
-            '-' | '\u{0021}' => {
+            '-' => {
                 // Append a U+002D HYPHEN-MINUS character (-) to the comment token’s data.
                 self.append_to_comment_token('-');
                 Vec::new()

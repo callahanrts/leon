@@ -15,13 +15,13 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_attr_name_state(&mut self) -> Vec<Token> {
         let cur = self.consume_char();
         match cur {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' | '/' | '\u{002F}' | '>' | '\u{003E}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' | '/' | '>' => {
                 // Reconsume in the after attribute name state.
                 self.reconsume_char();
                 self.state = State::AfterAttrNameState;
                 Vec::new()
             },
-            '=' | '\u{003D}' => {
+            '=' => {
                 // Switch to the before attribute value state.
                 self.state = State::BeforeAttrNameState;
                 Vec::new()
@@ -37,7 +37,7 @@ impl<'a> Tokenizer<'a> {
                 self.edit_current_tag(|tag| tag.append_attr_name('\u{FFFD}'));
                 Vec::new()
             },
-            '"' | '\u{0022}' | '\'' | '\u{0027}' | '<' | '\u{003C}' => {
+            '"' | '\'' | '<' => {
                 // Parse error. Treat it as per the "anything else" entry below.
                 self.edit_current_tag(|tag| tag.append_attr_name('"'));
                 Vec::new()

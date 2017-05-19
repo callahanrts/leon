@@ -14,7 +14,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '<' | '\u{003C}' => {
+            '<' => {
                 // Append the current input character to the comment token’s data.
                 self.append_to_comment_token('<');
 
@@ -22,7 +22,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::CommentLessThanSignState;
                 Vec::new()
             },
-            '-' | '\u{002D}' => {
+            '-' => {
                 // Switch to the comment end dash state
                 self.state = State::CommentEndDashState;
                 Vec::new()

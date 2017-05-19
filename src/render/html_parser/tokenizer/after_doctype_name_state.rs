@@ -17,18 +17,18 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Ignore the character
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Switch to the data state.
                 self.state = State::DataState;
 
                 // Emit the current DOCTYPE token.
                 vec_with_token(self.current_token())
             },
-            c => {
+            _ => {
                 self.reconsume_char();
 
                 // If the six characters starting from the current input character are an
@@ -36,7 +36,7 @@ impl<'a> Tokenizer<'a> {
                 if self.starts_with_nocase("public") {
                     println!("PUBLIC");
                     // then consume those characters
-                    for i in 0..6 {
+                    for _ in 0..6 {
                         self.consume_char();
                     }
                     // and switch to the after DOCTYPE public keyword state.
@@ -46,7 +46,7 @@ impl<'a> Tokenizer<'a> {
                 // character are an ASCII case-insensitive match for the word "SYSTEM",
                 else if self.starts_with_nocase("system") {
                     // then consume those characters
-                    for i in 0..6 {
+                    for _ in 0..6 {
                         self.consume_char();
                     }
                     // and switch to the after DOCTYPE system keyword state.

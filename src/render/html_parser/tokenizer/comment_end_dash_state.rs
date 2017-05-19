@@ -11,7 +11,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '-' | '\u{0021}' => {
+            '-' => {
                 // Switch to the comment end state
                 self.state = State::CommentEndState;
                 Vec::new()

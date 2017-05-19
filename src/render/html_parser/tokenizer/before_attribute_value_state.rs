@@ -4,21 +4,21 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_before_attr_value_state(&mut self) -> Vec<Token> {
         match self.consume_char() {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}'  => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Ignore the character
                 Vec::new()
             },
-            '"' | '\u{0022}' => {
+            '"' => {
                 // Switch to the attribute value (double-quoted) state.
                 self.state = State::AttrValueDoubleQuotedState;
                 Vec::new()
             },
-            '\'' | '\u{0027}' => {
+            '\'' => {
 				// Switch to the attribute value (single-quoted) state.
                 self.state = State::AttrValueSingleQuotedState;
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
 				// Parse error. Treat it as per the "anything else" entry below.
                 self.reconsume_char();
                 self.state = State::AttrValueUnquotedState;

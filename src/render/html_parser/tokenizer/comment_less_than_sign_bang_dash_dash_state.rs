@@ -9,7 +9,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '>' | '\u{0021}' => {
+            '>' => {
                 // Reconsume in the comment end state.
                 self.reconsume_char();
                 self.state = State::CommentEndState;

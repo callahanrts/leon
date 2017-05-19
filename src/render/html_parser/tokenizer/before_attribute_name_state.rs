@@ -5,17 +5,17 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_before_attr_name_state(&mut self) -> Vec<Token> {
         let cur = self.consume_char();
         match cur {
-            '\t' | '\u{0009}' | '\u{000A}' | '\u{000C}' | ' ' | '\u{0020}' => {
+            '\t' | '\u{000A}' | '\u{000C}' | ' ' => {
                 // Ignore the character
                 Vec::new()
             },
-            '/' | '\u{002F}' | '>' | '\u{003E}' => {
+            '/' | '>' => {
                 // Reconsume in the after attribute name state.
                 self.reconsume_char();
                 self.state = State::AfterAttrNameState;
                 Vec::new()
             },
-            '=' | '\u{003E}' => {
+            '=' => {
                 // Parse error.
                 // Start a new attribute in the current tag token.
                 // Set that attribute’s name to the current input character,

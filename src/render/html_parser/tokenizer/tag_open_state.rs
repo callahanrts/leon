@@ -5,12 +5,12 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_tag_open_state(&mut self) -> Vec<Token> {
         // Consume the next input Char
         match self.consume_char() {
-            '!' | '\u{0021}' => {
+            '!' => {
                 // Switch to MarkupDeclarationOpenState
                 self.state = State::MarkupDeclarationOpenState;
                 return Vec::new();
             },
-            '/' | '\u{002F}' => {
+            '/' => {
                 self.state = State::EndTagOpenState;
                 return Vec::new();
             },
@@ -22,7 +22,7 @@ impl<'a> Tokenizer<'a> {
                 self.current_token = Some(Token::StartTagToken(Tag::new(String::new())));
                 return Vec::new();
             },
-            '?' | '\u{003F}' => {
+            '?' => {
                 // TODO: Parse Error
                 // Reconsume character and enter the BogusCommentState
                 self.reconsume_char();

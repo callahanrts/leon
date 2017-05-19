@@ -10,7 +10,7 @@ impl<'a> Tokenizer<'a> {
 
         // Consume the next input Char
         match self.consume_char() {
-            '&' | '\u{0026}' => {
+            '&' => {
                 // Set the return state to the RCDATA state.
                 self.return_state = State::RCDataState;
 
@@ -18,7 +18,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::CharReferenceState;
                 return Vec::new();
             }
-            '<' | '\u{003C}' => {
+            '<' => {
                 self.state = State::RCDataLessThanSignState;
                 return Vec::new();
             }

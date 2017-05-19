@@ -4,7 +4,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_rawtext_less_than_sign_state(&mut self) -> Vec<Token> {
         match self.consume_char() {
-            '/' | '\u{002F}' => {
+            '/' => {
                 // Set the temporary buffer to the empty string.
                 self.tmp_buffer = String::new();
 

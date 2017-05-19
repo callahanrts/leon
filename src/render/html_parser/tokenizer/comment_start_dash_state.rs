@@ -14,12 +14,12 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '-' | '\u{002D}' => {
+            '-' => {
                 // Switch to the comment end state
                 self.state = State::CommentEndState;
                 Vec::new()
             },
-            '>' | '\u{002E}' => {
+            '>' => {
                 // Parse error.
                 // Switch to the data state.
                 self.state = State::DataState;

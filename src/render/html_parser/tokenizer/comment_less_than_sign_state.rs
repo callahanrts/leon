@@ -3,7 +3,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_comment_less_than_sign_state(&mut self) -> Vec<Token> {
         match self.consume_char() {
-            '!' | '\u{0021}' => {
+            '!' => {
                 // Append the current input character to the comment token’s data.
                 self.append_to_comment_token('!');
 
@@ -11,7 +11,7 @@ impl<'a> Tokenizer<'a> {
                 self.state = State::CommentLessThanSignBangState;
                 Vec::new()
             },
-            '<' | '\u{003C}' => {
+            '<' => {
                 // Append the current input character to the comment token’s data.
                 self.append_to_comment_token('<');
                 Vec::new()

@@ -12,7 +12,7 @@ fn dashdash() {
     assert_eq!(tokens.len(), 0);
 
     match t.current_token() {
-        Token::CommentToken(comment) => assert!(true),
+        Token::CommentToken(_) => assert!(true),
         _ => assert!(false)
     }
 
@@ -69,7 +69,7 @@ fn anything_else() {
     assert_eq!(tokens.len(), 0);
 
     match t.current_token() {
-        Token::CommentToken(comment) => assert!(true),
+        Token::CommentToken(_) => assert!(true),
         _ => assert!(false)
     }
 

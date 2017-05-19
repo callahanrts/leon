@@ -47,7 +47,7 @@ fn greater_than() {
     t.current_token = Some(Token::DoctypeToken(DoctypeData::new(String::new())));
 
     match *t.consume_after_doctype_public_identifier_state().first().unwrap() {
-        Token::DoctypeToken(ref data) => assert!(true),
+        Token::DoctypeToken(_) => assert!(true),
         _ => assert!(false)
     }
 
@@ -63,7 +63,7 @@ fn greater_than() {
 //   Change to the DOCTYPESystemIdentifierDoubleQuotedState
 fn double_quote() {
     let mut t = Tokenizer::new("\"");
-    let mut data = DoctypeData::new(String::new());
+    let data = DoctypeData::new(String::new());
     t.current_token = Some(Token::DoctypeToken(data));
     let tokens = t.consume_after_doctype_public_identifier_state();
     assert_eq!(tokens.len(), 0);
@@ -87,7 +87,7 @@ fn double_quote() {
 //   Change to the DOCTYPESystemIdentifierDoubleQuotedState
 fn single_quote() {
     let mut t = Tokenizer::new("'");
-    let mut data = DoctypeData::new(String::new());
+    let data = DoctypeData::new(String::new());
     t.current_token = Some(Token::DoctypeToken(data));
     let tokens = t.consume_after_doctype_public_identifier_state();
     assert_eq!(tokens.len(), 0);
@@ -111,7 +111,7 @@ fn single_quote() {
 //   Change to the BogusDOCTYPEState
 fn anything_else() {
     let mut t = Tokenizer::new("a");
-    let mut data = DoctypeData::new(String::new());
+    let data = DoctypeData::new(String::new());
     t.current_token = Some(Token::DoctypeToken(data));
     let tokens = t.consume_after_doctype_public_identifier_state();
     assert_eq!(tokens.len(), 0);

@@ -17,7 +17,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         match self.consume_char() {
-            '\'' | '\u{0027}' => {
+            '\'' => {
                 // Switch to the after DOCTYPE public identifier state.
                 self.state = State::AfterDOCTYPEPublicIdentifierState;
                 Vec::new()
@@ -29,7 +29,7 @@ impl<'a> Tokenizer<'a> {
                 self.edit_doctype_token(|data| data.append_public_identifier('\u{FFFD}'));
                 Vec::new()
             },
-            '>' | '\u{003E}' => {
+            '>' => {
                 // Parse error.
                 // Set the DOCTYPE token’s force-quirks flag to on.
                 self.edit_doctype_token(|data| data.force_quirks = true);

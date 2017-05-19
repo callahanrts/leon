@@ -15,7 +15,7 @@ fn eof() {
     for token in tokens {
         match token {
             Token::EOFToken => assert!(true),
-            Token::CommentToken(comment) => assert!(true),
+            Token::CommentToken(_) => assert!(true),
             _ => assert!(false)
         }
     }
