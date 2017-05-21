@@ -50,6 +50,7 @@ mod rawtext_end_tag_name_state;
 mod rawtext_end_tag_open_state;
 mod rawtext_less_than_sign_state;
 mod rawtext_state;
+mod char_reference_state;
 mod rcdata_end_tag_name_state;
 mod rcdata_end_tag_open_state;
 mod rcdata_less_than_sign_state;
@@ -204,6 +205,7 @@ enum State {
     CDataSectionBracketState,
     CDataSectionEndState,
     CDataSectionState,
+    CharReferenceEndState,
     CharReferenceState,
     CommentEndBangState,
     CommentEndDashState,
@@ -226,6 +228,7 @@ enum State {
     DataState,
     EndTagOpenState,
     MarkupDeclarationOpenState,
+    NumericCharReferenceState,
     PlaintextState,
     RCDataEndTagNameState,
     RCDataEndTagOpenState,
@@ -408,6 +411,7 @@ impl<'a> Tokenizer<'a> {
             State::CDataSectionState => self.consume_cdata_section_state(),
             State::CDataSectionBracketState => self.consume_cdata_section_bracket_state(),
             State::CDataSectionEndState => self.consume_cdata_section_end_state(),
+            State::CharReferenceState => self.consume_char_reference_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()

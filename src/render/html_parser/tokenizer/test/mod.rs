@@ -2,6 +2,7 @@
 use super::*;
 
 mod after_attribute_name_state_test;
+mod char_reference_state_test;
 mod after_attribute_value_quoted_state_test;
 mod after_doctype_name_state_test;
 mod after_doctype_public_identifier_state_test;
