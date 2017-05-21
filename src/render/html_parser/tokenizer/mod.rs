@@ -7,6 +7,11 @@ mod after_attribute_name_state;
 mod after_attribute_value_quoted_state;
 mod after_doctype_name_state;
 mod after_doctype_public_identifier_state;
+mod bogus_doctype_state;
+mod doctype_system_identifier_single_quoted_state;
+mod after_doctype_system_identifier_state;
+mod before_doctype_system_identifier_state;
+mod doctype_system_identifier_double_quoted_state;
 mod after_doctype_public_keyword_state;
 mod attribute_name_state;
 mod attribute_value_double_quoted_state;
@@ -33,6 +38,7 @@ mod doctype_name_state;
 mod doctype_public_identifier_double_quoted_state;
 mod doctype_public_identifier_single_quoted_state;
 mod doctype_state;
+mod after_doctype_system_keyword_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
 mod markup_declaration_open_state;
@@ -98,6 +104,13 @@ impl DoctypeData {
 
     pub fn append_public_identifier(&mut self, c: char) {
         self.public_identifier = match self.public_identifier {
+            Some(ref mut id) => Some(format!("{}{}", id, c)),
+            None => None
+        }
+    }
+
+    pub fn append_system_identifier(&mut self, c: char) {
+        self.system_identifier = match self.system_identifier {
             Some(ref mut id) => Some(format!("{}{}", id, c)),
             None => None
         }
@@ -176,6 +189,9 @@ enum State {
     AttrValueUnquotedState,
     BeforeAttrNameState,
     BeforeAttrValueState,
+    BeforeDOCTYPESystemIdentifierState,
+    AfterDOCTYPESystemIdentifierState,
+    AfterDOCTYPESystemKeywordState,
     BeforeDOCTYPENameState,
     BeforeDOCTYPEPublicIdentifierState,
     BetweenDOCTYPEPublicAndSystemIdentifiersState,
@@ -377,6 +393,12 @@ impl<'a> Tokenizer<'a> {
             State::DOCTYPEPublicIdentifierSingleQuotedState => self.consume_doctype_public_identifier_single_quoted_state(),
             State::AfterDOCTYPEPublicIdentifierState => self.consume_after_doctype_public_identifier_state(),
             State::BetweenDOCTYPEPublicAndSystemIdentifiersState => self.consume_between_doctype_public_and_system_identifiers_state(),
+            State::AfterDOCTYPESystemKeywordState => self.consume_after_doctype_system_keyword_state(),
+            State::BeforeDOCTYPESystemIdentifierState => self.consume_before_doctype_system_identifier_state(),
+            State::DOCTYPESystemIdentifierDoubleQuotedState => self.consume_doctype_system_identifier_double_quoted_state(),
+            State::DOCTYPESystemIdentifierSingleQuotedState => self.consume_doctype_system_identifier_single_quoted_state(),
+            State::AfterDOCTYPESystemIdentifierState => self.consume_after_doctype_system_identifier_state(),
+            State::BogusDOCTYPEState => self.consume_bogus_doctype_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
