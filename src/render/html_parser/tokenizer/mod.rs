@@ -7,12 +7,9 @@ mod after_attribute_name_state;
 mod after_attribute_value_quoted_state;
 mod after_doctype_name_state;
 mod after_doctype_public_identifier_state;
-mod bogus_doctype_state;
-mod doctype_system_identifier_single_quoted_state;
-mod after_doctype_system_identifier_state;
-mod before_doctype_system_identifier_state;
-mod doctype_system_identifier_double_quoted_state;
 mod after_doctype_public_keyword_state;
+mod after_doctype_system_identifier_state;
+mod after_doctype_system_keyword_state;
 mod attribute_name_state;
 mod attribute_value_double_quoted_state;
 mod attribute_value_single_quoted_state;
@@ -21,8 +18,13 @@ mod before_attribute_name_state;
 mod before_attribute_value_state;
 mod before_doctype_name_state;
 mod before_doctype_public_identifier_state;
+mod before_doctype_system_identifier_state;
 mod between_doctype_public_and_system_identifiers_state;
 mod bogus_comment_state;
+mod bogus_doctype_state;
+mod cdata_section_bracket_state;
+mod cdata_section_end_state;
+mod cdata_section_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
 mod comment_end_state;
@@ -38,7 +40,8 @@ mod doctype_name_state;
 mod doctype_public_identifier_double_quoted_state;
 mod doctype_public_identifier_single_quoted_state;
 mod doctype_state;
-mod after_doctype_system_keyword_state;
+mod doctype_system_identifier_double_quoted_state;
+mod doctype_system_identifier_single_quoted_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
 mod markup_declaration_open_state;
@@ -183,21 +186,24 @@ enum State {
     AfterDOCTYPENameState,
     AfterDOCTYPEPublicIdentifierState,
     AfterDOCTYPEPublicKeywordState,
+    AfterDOCTYPESystemIdentifierState,
+    AfterDOCTYPESystemKeywordState,
     AttrNameState,
     AttrValueDoubleQuotedState,
     AttrValueSingleQuotedState,
     AttrValueUnquotedState,
     BeforeAttrNameState,
     BeforeAttrValueState,
-    BeforeDOCTYPESystemIdentifierState,
-    AfterDOCTYPESystemIdentifierState,
-    AfterDOCTYPESystemKeywordState,
     BeforeDOCTYPENameState,
     BeforeDOCTYPEPublicIdentifierState,
+    BeforeDOCTYPESystemIdentifierState,
     BetweenDOCTYPEPublicAndSystemIdentifiersState,
     BogusCommentState,
     BogusDOCTYPEState,
     CDATASectionState,
+    CDataSectionBracketState,
+    CDataSectionEndState,
+    CDataSectionState,
     CharReferenceState,
     CommentEndBangState,
     CommentEndDashState,
@@ -399,6 +405,9 @@ impl<'a> Tokenizer<'a> {
             State::DOCTYPESystemIdentifierSingleQuotedState => self.consume_doctype_system_identifier_single_quoted_state(),
             State::AfterDOCTYPESystemIdentifierState => self.consume_after_doctype_system_identifier_state(),
             State::BogusDOCTYPEState => self.consume_bogus_doctype_state(),
+            State::CDataSectionState => self.consume_cdata_section_state(),
+            State::CDataSectionBracketState => self.consume_cdata_section_bracket_state(),
+            State::CDataSectionEndState => self.consume_cdata_section_end_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
