@@ -25,6 +25,7 @@ mod bogus_doctype_state;
 mod cdata_section_bracket_state;
 mod cdata_section_end_state;
 mod cdata_section_state;
+mod char_reference_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
 mod comment_end_state;
@@ -36,6 +37,7 @@ mod comment_start_dash_state;
 mod comment_start_state;
 mod comment_state;
 mod data_state;
+mod decimal_char_reference_start_state;
 mod doctype_name_state;
 mod doctype_public_identifier_double_quoted_state;
 mod doctype_public_identifier_single_quoted_state;
@@ -44,13 +46,14 @@ mod doctype_system_identifier_double_quoted_state;
 mod doctype_system_identifier_single_quoted_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
+mod hex_char_reference_start_state;
 mod markup_declaration_open_state;
+mod numeric_char_reference_state;
 mod plaintext_state;
 mod rawtext_end_tag_name_state;
 mod rawtext_end_tag_open_state;
 mod rawtext_less_than_sign_state;
 mod rawtext_state;
-mod char_reference_state;
 mod rcdata_end_tag_name_state;
 mod rcdata_end_tag_open_state;
 mod rcdata_less_than_sign_state;
@@ -226,7 +229,10 @@ enum State {
     DOCTYPESystemIdentifierSingleQuotedState,
     DOCTYPESystemKeywordState,
     DataState,
+    DecimalCharReferenceStartState,
     EndTagOpenState,
+    HexCharReferenceStartState,
+    HexCharReferenceState,
     MarkupDeclarationOpenState,
     NumericCharReferenceState,
     PlaintextState,
@@ -269,6 +275,7 @@ struct Tokenizer<'a> {
     current_token: Option<Token>,
     tokens: Vec<Token>,
     tmp_buffer: String,
+    char_reference_code: String,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -281,6 +288,7 @@ impl<'a> Tokenizer<'a> {
             current_token: None,
             tokens: Vec::new(),
             tmp_buffer: String::new(),
+            char_reference_code: String::new(),
         }
     }
 
@@ -412,6 +420,9 @@ impl<'a> Tokenizer<'a> {
             State::CDataSectionBracketState => self.consume_cdata_section_bracket_state(),
             State::CDataSectionEndState => self.consume_cdata_section_end_state(),
             State::CharReferenceState => self.consume_char_reference_state(),
+            State::NumericCharReferenceState => self.consume_numeric_char_reference_state(),
+            State::HexCharReferenceStartState => self.consume_hex_char_reference_start_state(),
+            State::DecimalCharReferenceStartState => self.consume_decimal_char_reference_start_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
@@ -554,6 +565,15 @@ fn is_lower_ascii(c: char) -> bool {
     match c {
         'a' ... 'z'  => true,
         _ => false
+    }
+}
+
+fn is_hex(c: char) -> bool {
+    match c {
+        '0' ... '9' => true,
+        'a' ... 'f' => true,
+        'A' ... 'F' => true,
+        _ => false,
     }
 }
 
