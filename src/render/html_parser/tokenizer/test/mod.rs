@@ -76,3 +76,4 @@ mod script_data_state_test;
 mod self_closing_start_tag_state_test;
 mod tag_name_state_test;
 mod tag_open_state_test;
+mod hex_char_reference_state_test;

@@ -24,6 +24,7 @@ mod bogus_comment_state;
 mod bogus_doctype_state;
 mod cdata_section_bracket_state;
 mod cdata_section_end_state;
+mod hex_char_reference_state;
 mod cdata_section_state;
 mod char_reference_state;
 mod comment_end_bang_state;
@@ -248,6 +249,7 @@ enum State {
     ScriptDataDoubleEscapeStartState,
     ScriptDataDoubleEscapedDashDashState,
     ScriptDataDoubleEscapedDashState,
+    NumericCharReferenceEndState,
     ScriptDataDoubleEscapedLessThanSignState,
     ScriptDataDoubleEscapedState,
     ScriptDataEndTagNameState,
@@ -275,7 +277,7 @@ struct Tokenizer<'a> {
     current_token: Option<Token>,
     tokens: Vec<Token>,
     tmp_buffer: String,
-    char_reference_code: String,
+    char_reference_code: i64,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -288,7 +290,7 @@ impl<'a> Tokenizer<'a> {
             current_token: None,
             tokens: Vec::new(),
             tmp_buffer: String::new(),
-            char_reference_code: String::new(),
+            char_reference_code: 0,
         }
     }
 
@@ -423,6 +425,7 @@ impl<'a> Tokenizer<'a> {
             State::NumericCharReferenceState => self.consume_numeric_char_reference_state(),
             State::HexCharReferenceStartState => self.consume_hex_char_reference_start_state(),
             State::DecimalCharReferenceStartState => self.consume_decimal_char_reference_start_state(),
+            State::HexCharReferenceState => self.consume_hex_char_reference_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()
