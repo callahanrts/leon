@@ -24,8 +24,8 @@ mod bogus_comment_state;
 mod bogus_doctype_state;
 mod cdata_section_bracket_state;
 mod cdata_section_end_state;
-mod hex_char_reference_state;
 mod cdata_section_state;
+mod char_reference_end_state;
 mod char_reference_state;
 mod comment_end_bang_state;
 mod comment_end_dash_state;
@@ -39,6 +39,7 @@ mod comment_start_state;
 mod comment_state;
 mod data_state;
 mod decimal_char_reference_start_state;
+mod decimal_char_reference_state;
 mod doctype_name_state;
 mod doctype_public_identifier_double_quoted_state;
 mod doctype_public_identifier_single_quoted_state;
@@ -48,7 +49,9 @@ mod doctype_system_identifier_single_quoted_state;
 mod end_tag_name_state;
 mod end_tag_open_state;
 mod hex_char_reference_start_state;
+mod hex_char_reference_state;
 mod markup_declaration_open_state;
+mod numeric_char_reference_end_state;
 mod numeric_char_reference_state;
 mod plaintext_state;
 mod rawtext_end_tag_name_state;
@@ -185,6 +188,7 @@ struct Attribute {
     value: String,
 }
 
+#[derive(Clone)]
 enum State {
     AfterAttrNameState,
     AfterAttrValueQuotedState,
@@ -231,10 +235,12 @@ enum State {
     DOCTYPESystemKeywordState,
     DataState,
     DecimalCharReferenceStartState,
+    DecimalCharReferenceState,
     EndTagOpenState,
     HexCharReferenceStartState,
     HexCharReferenceState,
     MarkupDeclarationOpenState,
+    NumericCharReferenceEndState,
     NumericCharReferenceState,
     PlaintextState,
     RCDataEndTagNameState,
@@ -249,7 +255,6 @@ enum State {
     ScriptDataDoubleEscapeStartState,
     ScriptDataDoubleEscapedDashDashState,
     ScriptDataDoubleEscapedDashState,
-    NumericCharReferenceEndState,
     ScriptDataDoubleEscapedLessThanSignState,
     ScriptDataDoubleEscapedState,
     ScriptDataEndTagNameState,
@@ -426,6 +431,8 @@ impl<'a> Tokenizer<'a> {
             State::HexCharReferenceStartState => self.consume_hex_char_reference_start_state(),
             State::DecimalCharReferenceStartState => self.consume_decimal_char_reference_start_state(),
             State::HexCharReferenceState => self.consume_hex_char_reference_state(),
+            State::DecimalCharReferenceState => self.consume_decimal_char_reference_state(),
+            State::CharReferenceEndState => self.consume_char_reference_end_state(),
 
             // TODO: Cover all states instead of using a catchall
             _ => Vec::new()

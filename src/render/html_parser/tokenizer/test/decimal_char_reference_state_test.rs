@@ -7,9 +7,9 @@ use super::*;
 //   Change to the HexCharReferenceState
 fn hex() {
     let mut t = Tokenizer::new("3aB");
-    t.consume_hex_char_reference_state();
-    t.consume_hex_char_reference_state();
-    let tokens = t.consume_hex_char_reference_state();
+    t.consume_decimal_char_reference_state();
+    t.consume_decimal_char_reference_state();
+    let tokens = t.consume_decimal_char_reference_state();
     assert_eq!(tokens.len(), 0);
     assert_eq!(t.char_reference_code, 939);
 }
@@ -19,7 +19,7 @@ fn hex() {
 //   Change to the CharReferenceEndState
 fn semicolon() {
     let mut t = Tokenizer::new(";");
-    let tokens = t.consume_hex_char_reference_state();
+    let tokens = t.consume_decimal_char_reference_state();
     assert_eq!(tokens.len(), 0);
     match t.state {
         State::NumericCharReferenceEndState => assert!(true),
@@ -33,7 +33,7 @@ fn semicolon() {
 //   Change to the NumericCharReferenceEndState
 fn anything_else() {
     let mut t = Tokenizer::new("J");
-    let tokens = t.consume_hex_char_reference_state();
+    let tokens = t.consume_decimal_char_reference_state();
     assert_eq!(tokens.len(), 0);
     assert_eq!(t.next_char(), 'J');
     match t.state {
