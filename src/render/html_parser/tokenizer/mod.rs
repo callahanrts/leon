@@ -85,7 +85,7 @@ mod tag_name_state;
 mod tag_open_state;
 
 #[derive(Clone)]
-enum Token {
+pub enum Token {
     // Empty, // NOTE: Not used
     DoctypeToken(DoctypeData),
     StartTagToken(Tag),
@@ -96,7 +96,7 @@ enum Token {
 }
 
 #[derive(Clone)]
-struct DoctypeData {
+pub struct DoctypeData {
     name: String,
     public_identifier: Option<String>,
     system_identifier: Option<String>,
@@ -129,7 +129,7 @@ impl DoctypeData {
 }
 
 #[derive(Clone)]
-struct Tag {
+pub struct Tag {
     name: String,
     self_closing: bool,
     attributes: Vec<Attribute>,
@@ -183,13 +183,13 @@ impl Tag {
 }
 
 #[derive(Clone)]
-struct Attribute {
+pub struct Attribute {
     name: String,
     value: String,
 }
 
 #[derive(Clone)]
-enum State {
+pub enum State {
     AfterAttrNameState,
     AfterAttrValueQuotedState,
     AfterDOCTYPENameState,
@@ -274,7 +274,7 @@ enum State {
     TagOpenState,
 }
 
-struct Tokenizer<'a> {
+pub struct Tokenizer<'a> {
     pos: usize,
     input: &'a str,
     state: State,
