@@ -1,5 +1,6 @@
 # Leon
 ![travis](https://travis-ci.org/callahanrts/leon.svg?branch=master)
+![Coverage Status](https://coveralls.io/repos/github/callahanrts/leon/badge.svg?branch=master)
 
 Useful information on [how browsers work](https://www.html5rocks.com/en/tutorials/internals/howbrowserswork/#CSS_parsing)
 
