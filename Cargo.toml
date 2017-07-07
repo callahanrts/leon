@@ -5,3 +5,4 @@ authors = ["Cody <callahanrts@gmail.com>"]
 
 [dependencies]
 glium="*"
+html5ever="*"

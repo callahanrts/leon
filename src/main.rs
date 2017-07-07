@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate glium;
+extern crate html5ever;
 
 pub mod render;
 
@@ -10,15 +11,38 @@ use std::thread;
 
 use render::{parser, css};
 
+// HTML5
+use html5ever::{parse_document};
+use html5ever::driver::ParseOpts;
+use html5ever::rcdom::RcDom;
+use html5ever::tree_builder::TreeBuilderOpts;
+use html5ever::tendril::TendrilSink;
+
 fn main() {
     start_window();
 }
 
 fn start_window() {
+    let opts = ParseOpts {
+        tree_builder: TreeBuilderOpts {
+            drop_doctype: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
     let html = read_file("html/basic.html".to_string());
+    let html_bytes = read_file("html/basic.html".to_string());
     let css = read_file("html/basic.css".to_string());
     let stylesheet = css::parse(css);
+
+    // Parse HTML
     let root_node = parser::parse(html);
+    let dom = parse_document(RcDom::default(), opts)
+        .from_utf8()
+        .read_from(&mut html_bytes.as_bytes())
+        .unwrap();
+
     let style_root = render::style::style_tree(&root_node, &stylesheet);
 
     use glium::{DisplayBuild};
