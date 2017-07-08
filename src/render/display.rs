@@ -7,7 +7,7 @@ use glium::backend::glutin_backend::{GlutinFacade};
 
 type DisplayList = Vec<DisplayCommand>;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 struct Vertex {
     position: [f32; 2],
 }
@@ -15,7 +15,6 @@ struct Vertex {
 implement_vertex!(Vertex, position);
 
 
-#[derive(Debug)]
 enum DisplayCommand {
     SolidColor(Color, Rect),
     // Insert more commands here

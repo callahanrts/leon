@@ -2,27 +2,25 @@
 // The style tree combines the dom tree and css styles into a single object. It
 // is set up so the order reflects the order in which elements should be painted.
 
-use std::collections::HashMap;
+use std::collections::{HashSet,HashMap};
 use render::css;
-use render::dom;
+use html5ever::rcdom::{RcDom, Handle, NodeData};
 
 pub type PropertyMap = HashMap<String, css::Value>;
 
-#[derive(Debug)]
 pub enum Display {
     Inline,
     Block,
     None,
 }
 
-#[derive(Debug)]
-pub struct StyleNode<'a> {
-    pub node: &'a dom::Node,
+pub struct StyleNode {
+    pub node: Handle,
     pub specified_values: PropertyMap,
-    pub children: Vec<StyleNode<'a>>,
+    pub children: Vec<StyleNode>,
 }
 
-impl<'a> StyleNode<'a> {
+impl StyleNode {
     // Return the specified value of a property if it exists. Otherwise, None
     pub fn value(&self, name: &str) -> Option<css::Value> {
         self.specified_values.get(name).map(|v| v.clone())
@@ -46,7 +44,7 @@ impl<'a> StyleNode<'a> {
     }
 }
 
-fn matches(elem: &dom::ElementData, selector: &css::Selector) -> bool {
+fn matches(elem: &NodeData, selector: &css::Selector) -> bool {
     match *selector {
         css::Selector::Simple(ref simple_selector) => {
             matches_simple_selector(elem, simple_selector)
@@ -54,19 +52,19 @@ fn matches(elem: &dom::ElementData, selector: &css::Selector) -> bool {
     }
 }
 
-fn matches_simple_selector(elem: &dom::ElementData, selector: &css::SimpleSelector) -> bool {
+fn matches_simple_selector(elem: &NodeData, selector: &css::SimpleSelector) -> bool {
     // Check type selector
-    if selector.tag_name.iter().any(|name| elem.tag_name != *name) {
+    if selector.tag_name.iter().any(|name| element_name(elem) != *name) {
         return false;
     }
 
     // Check ID Selector
-    if selector.id.iter().any(|id| elem.id() != Some(id)) {
+    if selector.id.iter().any(|id| &*element_id(elem) != id) {
         return false;
     }
 
     // Check Class Selectors
-    if selector.class.iter().any(|class| !elem.classes().contains(&**class)) {
+    if selector.class.iter().any(|class| !element_classes(elem).contains(&**class)) {
         return false;
     }
 
@@ -76,7 +74,7 @@ fn matches_simple_selector(elem: &dom::ElementData, selector: &css::SimpleSelect
 
 type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
 // if rule matches elem, return a MatchedRule, otherwise return None
-fn match_rule<'a>(elem: &dom::ElementData, rule: &'a css::Rule) -> Option<MatchedRule<'a>> {
+fn match_rule<'a>(elem: &NodeData, rule: &'a css::Rule) -> Option<MatchedRule<'a>> {
     // Find the first (highest specificity) matching selector
     rule.selectors.iter()
         .find(|selector| matches(elem, *selector))
@@ -84,12 +82,12 @@ fn match_rule<'a>(elem: &dom::ElementData, rule: &'a css::Rule) -> Option<Matche
 }
 
 // Find all CSS rules that match a given element
-fn matching_rules<'a>(elem: &dom::ElementData, stylesheet: &'a css::StyleSheet) -> Vec<MatchedRule<'a>> {
+fn matching_rules<'a>(elem: &NodeData, stylesheet: &'a css::StyleSheet) -> Vec<MatchedRule<'a>> {
     stylesheet.rules.iter().filter_map(|rule| match_rule(elem, rule)).collect()
 }
 
 // Apply Styles to a single element, returning the specified values
-fn specified_values(elem: &dom::ElementData, stylesheet: &css::StyleSheet) -> PropertyMap {
+fn specified_values(elem: &NodeData, stylesheet: &css::StyleSheet) -> PropertyMap {
     let mut values = HashMap::new();
     let mut rules = matching_rules(elem, stylesheet);
 
@@ -104,13 +102,52 @@ fn specified_values(elem: &dom::ElementData, stylesheet: &css::StyleSheet) -> Pr
     return values;
 }
 
-pub fn style_tree<'a>(root: &'a dom::Node, stylesheet: &'a css::StyleSheet) -> StyleNode<'a> {
+pub fn style_tree<'a>(root: &'a RcDom, stylesheet: &'a css::StyleSheet) -> StyleNode {
+    style_subtree(root.document.clone(), stylesheet)
+}
+
+pub fn style_subtree<'a>(node: Handle, stylesheet: &'a css::StyleSheet) -> StyleNode {
     StyleNode {
-        node: root,
-        specified_values: match root.node_type {
-            dom::NodeType::Element(ref elem) => specified_values(elem, stylesheet),
-            dom::NodeType::Text(_) => HashMap::new(),
-        },
-        children: root.children.iter().map(|child| style_tree(child, stylesheet)).collect()
+        node: node.clone(),
+        specified_values: specified_values(&node.data, stylesheet),
+        children: node.children.borrow().iter().map(|child| style_subtree(child.clone(), stylesheet)).collect(),
+    }
+}
+
+pub fn element_name(data: &NodeData) -> &str {
+    match *data {
+        // Return the name (type) of element
+        NodeData::Element { ref name, .. } => &*name.local,
+        _ => ""
+    }
+}
+
+pub fn element_id(data: &NodeData) -> String {
+    match *data {
+        NodeData::Element { ref attrs, .. } => {
+            // Search for the id attribute and return the value
+            for attr in attrs.borrow().iter() {
+                if &*attr.name.local == "id" {
+                    return String::from(&*attr.value);
+                }
+            }
+            return String::new();
+        }
+        _ => { String::new() }
+    }
+}
+
+pub fn element_classes(data: &NodeData) -> HashSet<String> {
+    match *data {
+        NodeData::Element { ref attrs, .. } => {
+            // Search for the class attribute and return a vector of the space separated classes
+            for attr in attrs.borrow().iter() {
+                if &*attr.name.local == "class" {
+                    return (&*attr.value).split(" ").map(|c| c.to_string()).collect();
+                }
+            }
+            return HashSet::new();
+        }
+        _ => { HashSet::new() }
     }
 }

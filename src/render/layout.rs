@@ -7,7 +7,7 @@ use render::css::{Value,Unit};
 
 // CSS box model. All sizes are in PX
 
-#[derive(Clone,Copy,Default,Debug)]
+#[derive(Clone,Copy,Default)]
 pub struct Dimensions {
     // Position of the content area relative to the document origin.
     pub content: Rect,
@@ -35,7 +35,7 @@ impl Dimensions {
     }
 }
 
-#[derive(Clone,Copy,Default,Debug)]
+#[derive(Clone,Copy,Default)]
 pub struct Rect {
     pub x: f32,
     pub y: f32,
@@ -54,7 +54,7 @@ impl Rect {
     }
 }
 
-#[derive(Clone,Copy,Default,Debug)]
+#[derive(Clone,Copy,Default)]
 pub struct EdgeSizes {
     pub left: f32,
     pub right: f32,
@@ -62,7 +62,6 @@ pub struct EdgeSizes {
     pub bottom: f32,
 }
 
-#[derive(Debug)]
 pub struct LayoutBox<'a> {
     pub dimensions: Dimensions,
     pub box_type: BoxType<'a>,
@@ -215,15 +214,14 @@ impl<'a> LayoutBox<'a> {
     }
 }
 
-#[derive(Debug)]
 pub enum BoxType<'a> {
-    BlockNode(&'a StyleNode<'a>),
-    InlineNode(&'a StyleNode<'a>),
+    BlockNode(&'a StyleNode),
+    InlineNode(&'a StyleNode),
     AnonymousBlock,
 }
 
 // Transform a style tree into a layout tree.
-pub fn layout_tree<'a>(node: &'a StyleNode<'a>, mut containing_block: Dimensions) -> LayoutBox<'a> {
+pub fn layout_tree<'a>(node: &'a StyleNode, mut containing_block: Dimensions) -> LayoutBox<'a> {
     // The layout algorithm expects the container height to start at 0.
     // TODO: Save the initial containing block height, for calculating percent heights.
     containing_block.content.height = 0.0;
@@ -234,7 +232,7 @@ pub fn layout_tree<'a>(node: &'a StyleNode<'a>, mut containing_block: Dimensions
 }
 
 // Build the tree of LayoutBoxes, but don't perform any layout calculations yet
-pub fn build_layout_tree<'a>(style_node: &'a StyleNode<'a>) -> LayoutBox<'a> {
+pub fn build_layout_tree<'a>(style_node: &'a StyleNode) -> LayoutBox<'a> {
     let mut root = LayoutBox::new(match style_node.display() {
         Display::Block => BoxType::BlockNode(style_node),
         Display::Inline => BoxType::InlineNode(style_node),
@@ -280,7 +278,7 @@ impl<'a> LayoutBox<'a> {
         }
     }
 
-    fn get_style_node(&self) -> &'a StyleNode<'a> {
+    fn get_style_node(&self) -> &'a StyleNode {
         match self.box_type {
             BoxType::BlockNode(node) | BoxType::InlineNode(node) => node,
             BoxType::AnonymousBlock => panic!("Anonymous block has no style node")

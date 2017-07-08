@@ -9,7 +9,7 @@ use std::io::Read;
 use std::time::Duration;
 use std::thread;
 
-use render::{parser, css};
+use render::{css};
 
 // HTML5
 use html5ever::{parse_document};
@@ -31,19 +31,17 @@ fn start_window() {
         ..Default::default()
     };
 
-    let html = read_file("html/basic.html".to_string());
     let html_bytes = read_file("html/basic.html".to_string());
     let css = read_file("html/basic.css".to_string());
     let stylesheet = css::parse(css);
 
     // Parse HTML
-    let root_node = parser::parse(html);
     let dom = parse_document(RcDom::default(), opts)
         .from_utf8()
         .read_from(&mut html_bytes.as_bytes())
         .unwrap();
 
-    let style_root = render::style::style_tree(&root_node, &stylesheet);
+    let style_root = render::style::style_tree(&dom, &stylesheet);
 
     use glium::{DisplayBuild};
     let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
