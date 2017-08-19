@@ -71,6 +71,11 @@ impl TokenIterator {
         return tokens;
     }
 
+    pub fn remaining_tokens(&mut self) -> Vec<Token> {
+        let tokens: Vec<Token> = self.tokens.drain((self.pos - 1)..).collect();
+        tokens.clone()
+    }
+
     pub fn get_tokens(&self) -> Vec<Token> {
         self.tokens.clone()
     }

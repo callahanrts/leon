@@ -26,6 +26,31 @@ impl Declaration {
             rule: None,
         }
     }
+
+    pub fn string_value(&mut self) -> &str {
+        let ref component_value = self.value[0];
+        match *component_value {
+            ComponentValue::Token(ref token) => {
+                match *token {
+                    Token::IdentToken(ref name) => {
+                        name
+                    },
+                    _ => ""
+                }
+            },
+            _ => ""
+        }
+    }
+
+    pub fn number_value(&mut self) -> Option<Token> {
+        let ref component_value = self.value[0];
+        match *component_value {
+            ComponentValue::Token(ref token) => {
+                Some(token.clone())
+            },
+            _ => None
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -573,6 +598,13 @@ fn is_whitespace(token: Token) -> bool {
     }
 }
 
+fn is_colon(token: Token) -> bool {
+    match token {
+        Token::ColonToken => true,
+        _ => false
+    }
+}
+
 fn component_value_token(value: &ComponentValue) -> Token {
     match *value {
         ComponentValue::Token(ref token) => token.clone(),
@@ -590,6 +622,25 @@ pub fn parse_block_declarations(block: Block) -> Vec<Declaration> {
         _ => Vec::new()
     }
 }
+
+// pub fn parse_declaration_data(dec: Declaration) -> (String, Vec<Token>) {
+//     let tokens: Vec<Token> = dec.value.iter().map(|v| component_value_token(v)).collect();
+//     let mut iterator = TokenIterator::new(tokens.clone());
+//     let name = parse_declaration_name(&mut iterator);
+//     let val = iterator.remaining_tokens();
+//     return (name, val);
+// }
+
+// fn parse_declaration_name(iterator: &mut TokenIterator) -> String {
+//     iterator.consume_token();
+//     match iterator.current_token() {
+//         Token::IdentToken(name) => {
+//             iterator.consume_while(|c| is_colon(c));
+//             name
+//         }
+//         _ => String::new() // There was a problem if we hit this
+//     }
+// }
 
 // Starting very basic. We only care to know the id, classlist, and element type.
 // Eventually, this will return a Selector object that will determine whether

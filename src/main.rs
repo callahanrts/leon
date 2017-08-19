@@ -17,7 +17,6 @@ use html5ever::rcdom::RcDom;
 use html5ever::tree_builder::TreeBuilderOpts;
 use html5ever::tendril::TendrilSink;
 
-
 fn main() {
     start_window();
 }
@@ -32,11 +31,7 @@ fn start_window() {
     };
 
     let html_bytes = read_file("html/basic.html".to_string());
-    // let css = read_file("html/basic.css".to_string());
-    // let stylesheet = css::parse(css);
-
     let css = read_file("html/basic.css".to_string());
-    // parse_css::parse(css2);
 
     // Parse HTML
     let dom = parse_document(RcDom::default(), opts)
@@ -44,7 +39,21 @@ fn start_window() {
         .read_from(&mut html_bytes.as_bytes())
         .unwrap();
 
-    render::style::style_tree(&dom, css);
+    let style_root = render::style::style_tree(&dom, css);
+    // render::style::print_tree(&style_root);
+
+    let width = 800;
+    let height = 600;
+    let dim = render::layout::Dimensions{
+        content: render::layout::Rect{
+            width: width as f32,
+            height: height as f32,
+            x: 0.0,
+            y: 0.0,
+        },
+        .. Default::default()
+    };
+    let layout_tree = render::layout::layout_tree(&style_root, dim);
 
     // use glium::{DisplayBuild};
     // let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
