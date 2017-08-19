@@ -1,4 +1,4 @@
-#[macro_use]
+// #[macro_use]
 extern crate glium;
 extern crate html5ever;
 extern crate css_parser;
@@ -7,10 +7,8 @@ pub mod render;
 
 use std::fs::File;
 use std::io::Read;
-use std::time::Duration;
-use std::thread;
-
-use render::{css, style};
+// use std::time::Duration;
+// use std::thread;
 
 // HTML5
 use html5ever::{parse_document};
@@ -46,7 +44,7 @@ fn start_window() {
         .read_from(&mut html_bytes.as_bytes())
         .unwrap();
 
-    let style_root = render::style::style_tree(&dom, css);
+    render::style::style_tree(&dom, css);
 
     // use glium::{DisplayBuild};
     // let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();

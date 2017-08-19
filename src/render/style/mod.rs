@@ -1,8 +1,8 @@
-use std::collections::{HashSet,HashMap};
-use html5ever::rcdom::{RcDom, Handle, NodeData};
-use css_parser::*;
+// use std::collections::{HashSet,HashMap};
+use html5ever::rcdom::{RcDom, Handle}; // NodeData
+// use css_parser::*;
 use css_parser::parser::*;
-use css_parser::tokenizer::*;
+// use css_parser::tokenizer::*;
 
 
 pub struct StyleNode {
