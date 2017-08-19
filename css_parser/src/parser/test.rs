@@ -15,7 +15,6 @@ fn test_newrule_data(){
     let rule = RuleData::new();
     assert_eq!(rule.name, String::new());
     assert_eq!(rule.prelude.len(), 0);
-    assert_eq!(rule.value, String::new());
     match rule.block {
         Block::Empty => assert!(true),
         _ => assert!(false),
@@ -27,10 +26,6 @@ fn test_new_block_data(){
     let block = BlockData::new(Token::LeftCurlyBracketToken);
     assert_eq!(block.name, String::new());
     assert_eq!(block.value.len(), 0);
-    match block.token {
-        Token::LeftCurlyBracketToken => assert!(true),
-        _ => assert!(false)
-    }
 }
 
 #[test]
@@ -138,7 +133,7 @@ fn test_consume_rules() {
     let input = "@media screen { body{color: #fff;} } \ndiv { color: #fff; } \nspan { color: #000; }";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    let rules = parser.consume_rules(&mut iterator);
+    let rules = consume_rules(&mut iterator, false);
     assert_eq!(rules.len(), 3);
 }
 
@@ -147,7 +142,7 @@ fn test_consume_qualified_rule() {
     let input = "div span {color: #fff;}";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    match parser.consume_qualified_rule(&mut iterator) {
+    match consume_qualified_rule(&mut iterator) {
         Some(rule) => {
             match rule {
                 Rule::BasicRule(data) => {
@@ -204,7 +199,7 @@ fn test_consume_at_rule() {
     let input = "@media screen{}";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    match parser.consume_at_rule(&mut iterator) {
+    match consume_at_rule(&mut iterator) {
         Some(rule) => {
             match rule {
                 Rule::AtRule(data) => {
@@ -235,7 +230,7 @@ fn test_consume_simple_block() {
     // is never called from a parse method, it should not start with the reconsume flag. For
     // testing, we'll just consume a token.
     iterator.consume_token();
-    let block = parser.consume_simple_block(&mut iterator);
+    let block = consume_simple_block(&mut iterator);
     assert_simple_block(block);
 }
 
@@ -245,7 +240,7 @@ fn test_consume_component_value() {
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
     iterator.consume_token();
-    match parser.consume_component_value(&mut iterator) {
+    match consume_component_value(&mut iterator) {
         ComponentValue::Block(block) => assert_simple_block(block),
         _ => assert!(false)
     }
@@ -283,7 +278,7 @@ fn test_consume_function() {
     let input = "('http://google.com')";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    match parser.consume_function(&mut iterator, "url".to_owned()) {
+    match consume_function(&mut iterator, "url".to_owned()) {
         Block::FunctionBlock(data) => {
             assert!(data.value.len() > 0);
             match data.value[0].clone() {
@@ -320,7 +315,7 @@ fn test_consume_declaration() {
     let input = "color: #fff ! Important  ";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    match parser.consume_declaration(&mut iterator) {
+    match consume_declaration(&mut iterator) {
         Some(dec) => {
             assert_eq!(dec.name, "color");
             // TODO:
@@ -332,7 +327,7 @@ fn test_consume_declaration() {
     let input = "color : #fff ! Important  ";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    match parser.consume_declaration(&mut iterator) {
+    match consume_declaration(&mut iterator) {
         Some(dec) => {
             assert_eq!(dec.name, "color");
             // TODO:
@@ -347,7 +342,7 @@ fn test_consume_declarations() {
     let input = "color: #fff ! Important; border : 1px solid #000";
     let mut parser = Parser::new(input);
     let mut iterator = TokenIterator::new(parser.tokens.clone());
-    let decs = parser.consume_declarations(&mut iterator);
+    let decs = consume_declarations(&mut iterator);
     assert_eq!(decs.len(), 2);
 }
 

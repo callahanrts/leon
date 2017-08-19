@@ -1,6 +1,8 @@
 * { display: block; padding: 50px; }
 
-.a { background: #ff00ff; }
+span#my-div { background: white; }
+div.a.b.c.d { }
+.a { background: #ff-01ff; }
 .b { background: #ffa500; }
 .c { background: #ffff00; }
 .d { background: #008000; }
