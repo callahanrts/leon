@@ -2,6 +2,7 @@
 name = "leon"
 version = "0.1.0"
 dependencies = [
+ "css_parser 0.1.0",
  "glium 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "html5ever 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -132,6 +133,10 @@ dependencies = [
  "libc 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.8.23 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "css_parser"
+version = "0.1.0"
 
 [[package]]
 name = "dbghelp-sys"
