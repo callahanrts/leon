@@ -72,9 +72,12 @@ impl<'a> LayoutBox<'a> {
     // Lay out a box and its descendants
     fn layout(&mut self, containing_block: Dimensions) {
         match self.box_type {
-            BoxType::BlockNode(_) => self.layout_block(containing_block),
-            BoxType::InlineNode(_) => {}, // TODO
-            BoxType::AnonymousBlock => {}, // TODO
+            BoxType::BlockNode(_) => {
+                println!("block");
+                self.layout_block(containing_block)
+            },
+            BoxType::InlineNode(_) => {println!("inline");}, // TODO
+            BoxType::AnonymousBlock => {println!("anonymous");}, // TODO
         }
     }
 
@@ -243,8 +246,14 @@ pub fn layout_tree<'a>(node: &'a StyleNode, mut containing_block: Dimensions) ->
 // Build the tree of LayoutBoxes, but don't perform any layout calculations yet
 pub fn build_layout_tree<'a>(style_node: &'a StyleNode) -> LayoutBox<'a> {
     let mut root = LayoutBox::new(match style_node.display() {
-        Display::Block => BoxType::BlockNode(style_node),
-        Display::Inline => BoxType::InlineNode(style_node),
+        Display::Block => {
+            println!("build block");
+            BoxType::BlockNode(style_node)
+        },
+        Display::Inline => {
+            println!("build inline");
+            BoxType::InlineNode(style_node)
+        },
         Display::None => panic!("Root node has display: none"),
     });
 
