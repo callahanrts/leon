@@ -71,6 +71,7 @@ pub struct LayoutBox<'a> {
 impl<'a> LayoutBox<'a> {
     // Lay out a box and its descendants
     fn layout(&mut self, containing_block: Dimensions) {
+        println!("LAYOUT");
         match self.box_type {
             BoxType::BlockNode(_) => self.layout_block(containing_block),
             BoxType::InlineNode(_) => {}, // TODO

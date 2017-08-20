@@ -43,37 +43,48 @@ fn start_window() {
 
     let style_root = render::style::style_tree(&dom, &stylesheet);
 
-    use glium::{DisplayBuild};
-    let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
+    let dim = render::layout::Dimensions{
+        content: render::layout::Rect{
+            width: 800.0,
+            height: 600.0,
+            x: 0.0,
+            y: 0.0,
+        },
+        .. Default::default()
+    };
+    let layout_root = render::layout::layout_tree(&style_root, dim);
 
-    loop {
+    // use glium::{DisplayBuild};
+    // let gdisplay = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
-        let win = gdisplay.get_window().unwrap();
-        let (width, height) = win.get_inner_size_pixels().unwrap();
-        let dim = render::layout::Dimensions{
-            content: render::layout::Rect{
-                width: width as f32,
-                height: height as f32,
-                x: 0.0,
-                y: 0.0,
-            },
-            .. Default::default()
-        };
+    // loop {
 
-        let layout_root = render::layout::layout_tree(&style_root, dim);
-        render::display::paint(&gdisplay, &layout_root);
+    //     let win = gdisplay.get_window().unwrap();
+    //     let (width, height) = win.get_inner_size_pixels().unwrap();
+    //     let dim = render::layout::Dimensions{
+    //         content: render::layout::Rect{
+    //             width: width as f32,
+    //             height: height as f32,
+    //             x: 0.0,
+    //             y: 0.0,
+    //         },
+    //         .. Default::default()
+    //     };
 
-        for ev in gdisplay.poll_events() {
-            match ev {
-                glium::glutin::Event::Closed => return, // Window has been closed by the user
-                _ => ()
-            }
-        }
+    //     let layout_root = render::layout::layout_tree(&style_root, dim);
+    //     render::display::paint(&gdisplay, &layout_root);
 
-        // Sleep for a few ms to save cpu. In the future, maybe we can pause this thread for
-        // inactive windows/tabs
-        thread::sleep(Duration::from_millis(20))
-    }
+    //     for ev in gdisplay.poll_events() {
+    //         match ev {
+    //             glium::glutin::Event::Closed => return, // Window has been closed by the user
+    //             _ => ()
+    //         }
+    //     }
+
+    //     // Sleep for a few ms to save cpu. In the future, maybe we can pause this thread for
+    //     // inactive windows/tabs
+    //     thread::sleep(Duration::from_millis(20))
+    // }
 }
 
 fn read_file(filename: String) -> String {
