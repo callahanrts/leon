@@ -1,5 +1,5 @@
 use render::layout::{LayoutBox,Rect,BoxType};
-use render::css::{Color,Value};
+use render::style::style_node::{Color,Value};
 
 use glium;
 use glium::{Surface};
@@ -162,12 +162,17 @@ fn vertex_shader_src<'a>() -> &'a str {
 }
 
 fn fragment_shader_src<'a>(color: Color) -> String {
+    let (r,g,b,a) = normalize_color(color);
     let src = format!(r##"
         #version 140
         out vec4 color;
         void main() {{
             color = vec4({}, {}, {}, {});
         }}
-    "##, color.r / 255, color.g / 255, color.b / 255, color.a / 255).to_owned();
+    "##, r, g, b, a).to_owned();
     return src;
+}
+
+fn normalize_color(color: Color) -> (f32, f32, f32, f32) {
+    (color.r as f32 / 255.0, color.g as f32 / 255.0, color.b as f32 / 255.0, color.a as f32 / 255.0)
 }

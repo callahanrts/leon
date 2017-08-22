@@ -1,53 +1,8 @@
 use std::collections::{HashSet};
 use html5ever::rcdom::{RcDom, Handle, NodeData};
 use css_parser::parser::*;
-
-pub enum Display {
-    Inline,
-    Block,
-    None,
-}
-
-pub struct StyleNode {
-    pub node: Handle,
-    pub values: Vec<Declaration>,
-    pub children: Vec<StyleNode>,
-}
-
-impl StyleNode {
-    // Return the specified value of a property if it exists. Otherwise, None
-    pub fn value(&self, name: &str) -> Option<Declaration> {
-        for declaration in self.values.clone() {
-            if declaration.name == name {
-                return Some(declaration);
-            }
-        }
-        None
-    }
-
-    pub fn lookup(&self, name: &str, fallback_name: &str, default: &Declaration) -> Declaration {
-        self.value(name).unwrap_or_else(|| self.value(fallback_name)
-                        .unwrap_or_else(|| default.clone()))
-    }
-
-    // The value of the display property -- defaults to inline
-    pub fn display(&self) -> Display {
-        match self.value("display") {
-            Some(dec) => match dec.clone().string_value() {
-                "block" => Display::Block,
-                "none" => Display::None,
-                _ => Display::Inline
-            },
-            _ => Display::Inline,
-        }
-    }
-
-    pub fn print(&self) {
-        let (el_type, el_id, el_classes) = parse_element_selectors(&self.node.data);
-        let class_list = el_classes.iter().fold(".".to_string(), |a, b| a.to_string() + "." + b);
-        println!("node: {} | id: {} | class: {}", el_type, el_id, class_list);
-    }
-}
+pub mod style_node;
+use self::style_node::*;
 
 // pub fn print_tree(node: &StyleNode) {
 //     let (el_type, el_id, el_classes) = parse_element_selectors(&node.node.data);

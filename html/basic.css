@@ -1,8 +1,9 @@
 * { display: block; padding: 50px; }
 
-span#my-div { background: white; }
+span#my-div { height: 40px; background: white; }
 div.a.b.c.d { }
-.a { background: #ff-01ff; }
+#test{ height: 22px; background: #9900FF; }
+.a { height: 22px; background: #ff01ff; }
 .b { background: #ffa500; }
 .c { background: #ffff00; }
 .d { background: #008000; }

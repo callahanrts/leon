@@ -26,31 +26,6 @@ impl Declaration {
             rule: None,
         }
     }
-
-    pub fn string_value(&mut self) -> &str {
-        let ref component_value = self.value[0];
-        match *component_value {
-            ComponentValue::Token(ref token) => {
-                match *token {
-                    Token::IdentToken(ref name) => {
-                        name
-                    },
-                    _ => ""
-                }
-            },
-            _ => ""
-        }
-    }
-
-    pub fn number_value(&mut self) -> Option<Token> {
-        let ref component_value = self.value[0];
-        match *component_value {
-            ComponentValue::Token(ref token) => {
-                Some(token.clone())
-            },
-            _ => None
-        }
-    }
 }
 
 #[derive(Clone)]

@@ -1,8 +1,8 @@
 // Layout Tree
 // The layout tree starts from a style tree and is made up of objects that
 // represent boxes that will be painted to the page.
-
-use render::style::{StyleNode,Display};
+use render::style::style_node::*;
+use css_parser::parser::*;
 use css_parser::tokenizer::*;
 
 // CSS box model. All sizes are in PX
@@ -72,10 +72,7 @@ impl<'a> LayoutBox<'a> {
     // Lay out a box and its descendants
     fn layout(&mut self, containing_block: Dimensions) {
         match self.box_type {
-            BoxType::BlockNode(_) => {
-                println!("block");
-                self.layout_block(containing_block)
-            },
+            BoxType::BlockNode(_) => self.layout_block(containing_block),
             BoxType::InlineNode(_) => {println!("inline");}, // TODO
             BoxType::AnonymousBlock => {println!("anonymous");}, // TODO
         }
@@ -100,103 +97,107 @@ impl<'a> LayoutBox<'a> {
     fn calculate_block_width(&mut self, containing_block: Dimensions) {
         let style = self.get_style_node();
 
-    //     // Width has initial value auto.
-    //     let auto = Value::Keyword("auto".to_string());
-    //     let mut width = style.value("width").unwrap_or(auto.clone());
+        // Width has initial value auto.
+        let auto = Value::KeywordValue("auto".to_string());
+        // let mut width = style.value("width").unwrap_or(auto.clone());
+        let mut width = auto.clone();
 
-    //     // Margin, border, and padding all have initial value 0.0
-    //     let zero = Value::Length(0.0, Unit::Px);
+        // Margin, border, and padding all have initial value 0.0
+        let zero = Value::LengthValue(0.0, Unit::Px);
 
-    //     let mut margin_left = style.lookup("margin-left", "margin", &zero);
-    //     let mut margin_right = style.lookup("margin-right", "margin", &zero);
+        let mut margin_left = style.lookup("margin-left", "margin", &zero);
+        let mut margin_right = style.lookup("margin-right", "margin", &zero);
 
-    //     let border_left = style.lookup("border-left-width", "border-width", &zero);
-    //     let border_right = style.lookup("border-right-width", "border-width", &zero);
+        let border_left = style.lookup("border-left-width", "border-width", &zero);
+        let border_right = style.lookup("border-right-width", "border-width", &zero);
 
-    //     let padding_left = style.lookup("padding-left", "padding", &zero);
-    //     let padding_right = style.lookup("padding-right", "padding", &zero);
+        let padding_left = style.lookup("padding-left", "padding", &zero);
+        let padding_right = style.lookup("padding-right", "padding", &zero);
 
-    //     let total = sum([&margin_left, &margin_right, &border_left, &border_right,
-    //                  &padding_left, &padding_right].iter().map(|v| v.to_px()));
+        let total = sum([&margin_left, &margin_right, &border_left, &border_right,
+                     &padding_left, &padding_right].iter().map(|v| v.to_px()));
 
-    //     if width != auto && total > containing_block.content.width {
-    //         if margin_left == auto {
-    //             margin_left = Value::Length(0.0, Unit::Px);
-    //         }
-    //         if margin_right == auto {
-    //             margin_right = Value::Length(0.0, Unit::Px);
-    //         }
-    //     }
+        if width != auto && total > containing_block.content.width {
+            if margin_left == auto {
+                margin_left = Value::LengthValue(0.0, Unit::Px);
+            }
+            if margin_right == auto {
+                margin_right = Value::LengthValue(0.0, Unit::Px);
+            }
+        }
 
-    //     let underflow = containing_block.content.width - total;
+        let underflow = containing_block.content.width - total;
 
-    //     match  (width == auto, margin_left == auto, margin_right == auto) {
-    //         // If the values are overconstrained, calculate margin_right.
-    //         (false, false, false) => {
-    //             margin_right = Value::Length(margin_right.to_px() + underflow, Unit::Px);
-    //         }
+        match  (width == auto, margin_left == auto, margin_right == auto) {
+            // If the values are overconstrained, calculate margin_right.
+            (false, false, false) => {
+                margin_right = Value::LengthValue(margin_right.to_px() + underflow, Unit::Px);
+            }
 
-    //         // If exactly one size is auto, its used value follows from the equality
-    //         (false, false, true) => { margin_right = Value::Length(underflow, Unit::Px) }
-    //         (false, true, false) => { margin_left = Value::Length(underflow, Unit::Px) }
+            // If exactly one size is auto, its used value follows from the equality
+            (false, false, true) => { margin_right = Value::LengthValue(underflow, Unit::Px) }
+            (false, true, false) => { margin_left = Value::LengthValue(underflow, Unit::Px) }
 
-    //         // If width is set to auto, any other auto values become 0.
-    //         (true, _, _) => {
-    //             if margin_left == auto { margin_left = Value::Length(0.0, Unit::Px) }
-    //             if margin_right == auto { margin_right = Value::Length(0.0, Unit::Px) }
+            // If width is set to auto, any other auto values become 0.
+            (true, _, _) => {
+                if margin_left == auto { margin_left = Value::LengthValue(0.0, Unit::Px) }
+                if margin_right == auto { margin_right = Value::LengthValue(0.0, Unit::Px) }
 
-    //             if underflow >= 0.0 {
-    //                 // Expand width to fill the underflow
-    //                 width = Value::Length(underflow, Unit::Px);
-    //             } else {
-    //                 // Width can't be negative. Adjust right margin instead
-    //                 width = Value::Length(0.0, Unit::Px);
-    //                 margin_right = Value::Length(margin_right.to_px() + underflow, Unit::Px);
-    //             }
-    //         }
+                if underflow >= 0.0 {
+                    // Expand width to fill the underflow
+                    width = Value::LengthValue(underflow, Unit::Px);
+                } else {
+                    // Width can't be negative. Adjust right margin instead
+                    width = Value::LengthValue(0.0, Unit::Px);
+                    margin_right = Value::LengthValue(margin_right.to_px() + underflow, Unit::Px);
+                }
+            }
 
-    //         // If margin left and margin right are both auto, their used values are equal
-    //         (false, true, true) => {
-    //             margin_left = Value::Length(underflow / 2.0, Unit::Px);
-    //             margin_right = Value::Length(underflow / 2.0, Unit::Px);
-    //         }
-    //     }
+            // If margin left and margin right are both auto, their used values are equal
+            (false, true, true) => {
+                margin_left = Value::LengthValue(underflow / 2.0, Unit::Px);
+                margin_right = Value::LengthValue(underflow / 2.0, Unit::Px);
+            }
+        }
 
-    //     let d = &mut self.dimensions;
-    //     d.content.width = width.to_px();
+        let d = &mut self.dimensions;
+        d.content.width = width.to_px();
 
-    //     d.padding.left = padding_left.to_px();
-    //     d.padding.right = padding_right.to_px();
+        d.padding.left = padding_left.to_px();
+        d.padding.right = padding_right.to_px();
 
-    //     d.border.left = border_left.to_px();
-    //     d.border.right = border_right.to_px();
+        d.border.left = border_left.to_px();
+        d.border.right = border_right.to_px();
 
-    //     d.margin.left = margin_left.to_px();
-    //     d.margin.right = margin_right.to_px();
+        d.margin.left = margin_left.to_px();
+        d.margin.right = margin_right.to_px();
     }
 
     fn calculate_block_position(&mut self, containing_block: Dimensions) {
         let style = self.get_style_node();
-    //     let d = &mut self.dimensions;
+        let d = &mut self.dimensions;
 
-    //     // margin, border, and padding have initial value 0.
-    //     let zero = Value::Length(0.0, Unit::Px);
+        // Width has initial value auto.
+        let auto = Value::KeywordValue("auto".to_string());
+        let mut width = style.value("width").unwrap_or(auto.clone());
+        // Margin, border, and padding all have initial value 0.0
+        let zero = Value::LengthValue(0.0, Unit::Px);
 
-    //     d.margin.top = style.lookup("margin-top", "margin", &zero).to_px();
-    //     d.margin.bottom = style.lookup("margin-bottom", "margin", &zero).to_px();
+        let mut margin_left = style.lookup("margin-left", "margin", &zero);
+        let mut margin_right = style.lookup("margin-right", "margin", &zero);
 
-    //     d.border.top = style.lookup("border-bottom-width", "border-width", &zero).to_px();
-    //     d.border.bottom = style.lookup("border-top-width", "border-width", &zero).to_px();
+        let border_left = style.lookup("border-left-width", "border-width", &zero);
+        let border_right = style.lookup("border-right-width", "border-width", &zero);
 
-    //     d.padding.top = style.lookup("padding-top", "padding", &zero).to_px();
-    //     d.padding.bottom = style.lookup("padding-bottom", "padding", &zero).to_px();
+        let padding_left = style.lookup("padding-left", "padding", &zero);
+        let padding_right = style.lookup("padding-right", "padding", &zero);
 
-    //     d.content.x = containing_block.content.x +
-    //                   d.margin.left + d.border.left + d.padding.left;
+        d.content.x = containing_block.content.x +
+                      d.margin.left + d.border.left + d.padding.left;
 
-    //     // Position the block below all the previous boxes in the container
-    //     d.content.y = containing_block.content.height + containing_block.content.y +
-    //                   d.margin.top + d.border.top + d.padding.top;
+        // Position the block below all the previous boxes in the container
+        d.content.y = containing_block.content.height + containing_block.content.y +
+                      d.margin.top + d.border.top + d.padding.top;
     }
 
     fn layout_block_children(&mut self) {
@@ -213,16 +214,9 @@ impl<'a> LayoutBox<'a> {
         // Otherwise, just keep the value set by layout_block_children.
         self.dimensions.content.height = 0.0; // initialize height
 
-        // if let Some(mut dec) = self.get_style_node().value("height") {
-        //     if let Some(token) = dec.number_value() {
-        //         self.dimensions.content.height = match token {
-        //             Token::PercentageToken(per) => 0.0,
-        //             Token::DimensionToken{value: val, num_type: tpe, unit: unit} => val,
-        //             Token::NumberToken{value: val, num_type: tpe} => val,
-        //             _ => 0.0
-        //         };
-        //     }
-        // }
+        if let Some(Value::LengthValue(h, Unit::Px)) = self.get_style_node().value("height") {
+            self.dimensions.content.height = h
+        }
     }
 }
 
@@ -246,14 +240,8 @@ pub fn layout_tree<'a>(node: &'a StyleNode, mut containing_block: Dimensions) ->
 // Build the tree of LayoutBoxes, but don't perform any layout calculations yet
 pub fn build_layout_tree<'a>(style_node: &'a StyleNode) -> LayoutBox<'a> {
     let mut root = LayoutBox::new(match style_node.display() {
-        Display::Block => {
-            println!("build block");
-            BoxType::BlockNode(style_node)
-        },
-        Display::Inline => {
-            println!("build inline");
-            BoxType::InlineNode(style_node)
-        },
+        Display::Block => BoxType::BlockNode(style_node),
+        Display::Inline => BoxType::InlineNode(style_node),
         Display::None => panic!("Root node has display: none"),
     });
 
@@ -303,7 +291,6 @@ impl<'a> LayoutBox<'a> {
         }
     }
 }
-
 
 fn sum<I>(iter: I) -> f32 where I: Iterator<Item=f32> {
     iter.fold(0., |a, b| a + b)
